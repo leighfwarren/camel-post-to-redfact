@@ -1,0 +1,155 @@
+<project
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <name>Atex dm.desk - camel-post-to-redfact-jar</name>
+  <groupId>com.atex.plugins</groupId>
+  <artifactId>camel-post-to-redfact</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.polopoly</groupId>
+    <artifactId>public</artifactId>
+    <version>10.16.7</version>
+    <relativePath />
+  </parent>
+
+  <properties>
+    <polopoly.version>10.16.5-fp2</polopoly.version>
+    <camel.version>2.13.2</camel.version>
+    <spring.version>4.1.0.RELEASE</spring.version>
+    <desk.version>1.12</desk.version>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.polopoly</groupId>
+      <artifactId>polopoly</artifactId>
+      <version>${polopoly.version}</version>
+      <classifier>api</classifier>
+      <type>jar</type>
+    </dependency>
+
+    <dependency>
+      <groupId>com.atex</groupId>
+      <artifactId>module-desk</artifactId>
+      <version>${desk.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-core</artifactId>
+      <version>${camel.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-test</artifactId>
+      <version>${camel.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!--
+
+    The JAXB dependency (jaxb-impl) is necessary in order to
+    be able to run the Nitro Integration Server with Java 7.
+    This is due to a bug in the JAXB version included in the
+    JDK. The dependency will be needed until the fix for JAXB
+    issue http://java.net/jira/browse/JAXB-860 has been
+    merged to the JDK.
+
+    -->
+
+    <dependency>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-impl</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-ejb_2.1_spec</artifactId>
+      <version>1.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+     <groupId>org.slf4j</groupId>
+     <artifactId>slf4j-log4j12</artifactId>
+     <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.atex.gong</groupId>
+      <artifactId>onecms-custom-beans</artifactId>
+      <version>2.8</version>
+      <scope>compile</scope>
+    </dependency>
+
+  </dependencies>
+  
+  <build>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.12</version>
+        <configuration>
+          <skipTests>true</skipTests>
+        </configuration>
+      </plugin>
+
+      <!-- this is needed to generate the variants xml -->
+      <plugin>
+        <groupId>com.atex.onecms</groupId>
+        <artifactId>content-api-annotations-maven-plugin</artifactId>
+        <version>1.0.2</version>
+        <executions>
+          <execution>
+            <id>process-content-api-annotations</id>
+            <goals>
+              <goal>process-content-api-annotations</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- this is needed to import the variants xml -->
+      <plugin>
+        <groupId>com.polopoly.extensions</groupId>
+        <artifactId>p-maven-plugin</artifactId>
+        <version>${polopoly.version}</version>
+        <executions>
+          <execution>
+            <id>pack-content</id>
+            <goals>
+              <goal>dot-content-to-xml</goal>
+              <goal>pack</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+  
+</project>
