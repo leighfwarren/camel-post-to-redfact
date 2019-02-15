@@ -17,6 +17,35 @@
     <relativePath />
   </parent>
 
+  <licenses>
+    <license>
+      <name>Atex Polopoly Source Code License</name>
+      <url>http://support.polopoly.com/confluence/display/GREENHOUSE/APSCL</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>products</id>
+      <name>Polopoly Products</name>
+      <email>support.polopoly@atex.com</email>
+      <organization>Atex</organization>
+      <organizationUrl>http://www.atex.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://support.atex.com/jira/browse/GONG</url>
+  </issueManagement>
+
+  <scm>
+    <developerConnection>scm:git:git@github.com:atex-community-plugins/camel-post-to-redfact.git</developerConnection>
+    <url>https://github.com/atex-community-plugins/camel-post-to-redfact</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <properties>
     <polopoly.version>10.16.5-fp2</polopoly.version>
     <camel.version>2.13.2</camel.version>
