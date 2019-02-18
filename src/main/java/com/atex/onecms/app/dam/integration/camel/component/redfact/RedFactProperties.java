@@ -67,8 +67,10 @@ public class RedFactProperties implements ApplicationOnAfterInitEvent {
     private void init() {
 
         try {
+            if (application == null) throw new CMException("Cannot get application");
             cmClient = (CmClient) application.getApplicationComponent(EjbCmClient.DEFAULT_COMPOUND_NAME);
-            cmServer = cmClient.getPolicyCMServer();
+            if (cmClient != null)
+                cmServer = cmClient.getPolicyCMServer();
 
             final RepositoryClient repoClient = (RepositoryClient) application.getApplicationComponent(RepositoryClient.DEFAULT_COMPOUND_NAME);
             if (repoClient == null) {
@@ -80,26 +82,32 @@ public class RedFactProperties implements ApplicationOnAfterInitEvent {
             contentManager = repoClient.getContentManager();
 
             final SolrHttpClient solrHttpClient = (SolrHttpClient) application.getApplicationComponent(SolrHttpClient.DEFAULT_COMPOUND_NAME);
-            searchClient = solrHttpClient.getSearchClient();
+            if (solrHttpClient != null)
+                searchClient = solrHttpClient.getSearchClient();
 
             final HttpFileServiceClient httpFileServiceClient = application.getPreferredApplicationComponent(HttpFileServiceClient.class);
-            fileService = httpFileServiceClient.getFileService();
+            if (httpFileServiceClient != null)
+                fileService = httpFileServiceClient.getFileService();
 
-            contentManager = repoClient.getContentManager();
+            if (repoClient != null)
+                contentManager = repoClient.getContentManager();
 
             initProperties();
 
-        } catch (Exception e) {
-            log.error("cannot initialized", e);
+        } catch (CMException | IllegalStateException | IllegalApplicationStateException e) {
+            log.warn("Cannot initialize redfact properties", e);
         }
     }
 
-    private void initProperties() {
+    private void initProperties() throws CMException {
 
         ContentRead environmentProfile;
-        try {
+
+        if (cmServer != null) {
             environmentProfile = cmServer.getContent(new ExternalContentId(REDFACT_PROFILE_EXTERNALID));
+            if (environmentProfile == null) throw new CMException("Cannot load "+REDFACT_PROFILE_EXTERNALID);
             String[] properties = environmentProfile.getComponentNames(REDFACT_COMPONENT_NAME);
+            if (properties == null) throw new CMException("unable to load redfact properties");
 
             for (String propertyName : properties) {
 
@@ -108,12 +116,24 @@ public class RedFactProperties implements ApplicationOnAfterInitEvent {
                     if (parts[0].equals("redfact")) {
                         String value = environmentProfile.getComponent(REDFACT_COMPONENT_NAME, propertyName);
                         switch (parts[1]) {
-                            case "api-url": this.apiHost = value; break;
-                            case "username": this.apiUser = value; break;
-                            case "password": this.apiPass = value; break;
-                            case "onecms-image-prefix": this.imagePrefix = value; break;
-                            case "onecms-image-secret": this.imageSecret = value; break;
-                            case "onecms-image-format": this.imageFormat = value; break;
+                            case "api-url":
+                                this.apiHost = value;
+                                break;
+                            case "username":
+                                this.apiUser = value;
+                                break;
+                            case "password":
+                                this.apiPass = value;
+                                break;
+                            case "onecms-image-prefix":
+                                this.imagePrefix = value;
+                                break;
+                            case "onecms-image-secret":
+                                this.imageSecret = value;
+                                break;
+                            case "onecms-image-format":
+                                this.imageFormat = value;
+                                break;
                         }
                     }
                 }
@@ -122,10 +142,7 @@ public class RedFactProperties implements ApplicationOnAfterInitEvent {
             if (this.imagePrefix != null && this.imagePrefix.endsWith("/")) {
                 this.imagePrefix = this.imagePrefix.substring(0, this.imagePrefix.length() - 1);
             }
-        } catch (CMException e) {
-            log.error("Unable to load RedFact properties",e);
         }
-
     }
 
     public String getUsername() {
