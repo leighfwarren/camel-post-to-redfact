@@ -11,16 +11,16 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 
-import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactImageBean;
 import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactProperties;
-import com.atex.onecms.app.dam.integration.camel.component.redfact.client.WPHttpClient;
 import com.atex.onecms.app.dam.integration.camel.component.redfact.json.DateDeserializer;
-import com.atex.onecms.app.dam.integration.camel.component.redfact.json.PostResponse;
-import com.atex.onecms.content.ContentId;
-import com.atex.onecms.content.ContentManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.polopoly.user.server.Caller;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,12 +51,9 @@ public class SendToPostProcessor implements Processor {
         try {
             final Message msg = exchange.getIn();
 
-            final Caller caller = msg.getHeader("caller", Caller.class);
-            final ContentId contentId = msg.getHeader("contentId", ContentId.class);
-            final ContentManager contentManager = msg.getHeader("contentManager", ContentManager.class);
             RedFactArticleBean redFactArticleBean = msg.getBody(RedFactArticleBean.class);
 
-            final PostResponse response = sendArticleToRedFact(redFactArticleBean);
+            String response = sendArticleToRedFact(redFactArticleBean);
             exchange.getOut().setBody(response);
 
 
@@ -65,62 +62,37 @@ public class SendToPostProcessor implements Processor {
         }
     }
     
-    private PostResponse sendArticleToRedFact(final RedFactArticleBean articleBean) throws IOException {
+    private String sendArticleToRedFact(final RedFactArticleBean articleBean) throws IOException {
 
         String articleJson = gson.toJson(articleBean);
 
         RedFactProperties properties = RedFactProperties.getInstance();
         String url = properties.getAPIUrl();
-        final PostResponse response = sendJSON(url, articleJson, PostResponse.class);
-        log.info("response: " + response.toString());
+        String response = sendJSON(url, articleJson);
+        log.info("response: " + response);
         return response;
     }
-        
-    private ByteArrayOutputStream getImageBinaryData(final RedFactImageBean imageBean) throws IOException {
-        RedFactProperties properties = RedFactProperties.getInstance();
-        String url = imageBean.getUrl();
-        if (url.startsWith("/")) {
-            url = properties.getOneCMSImagePrefix() + url;
-        }
 
-        log.info("Getting image from " + url);
-
-        final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        final WPHttpClient httpClient = new WPHttpClient(gson);
-        final int statusCode = httpClient.doGet(url, stream);
-        if (statusCode != 200) {
-            log.error( "cannot get image from " + url + " due to " + statusCode + " status code");
-            return null;
-        }
-        return stream;
-    }
-
-    private <T> T sendJSON(final String url, final Object jsonReq, final Class<T> expectedResponse) throws IOException {
+    private String sendJSON(final String url, final Object jsonReq) throws IOException {
         try (final OutputStream stream = new ByteArrayOutputStream()) {
 
-            final WPHttpClient httpClient = new WPHttpClient(gson);
+            CloseableHttpClient httpclient = HttpClients.createDefault();
 
-            final int statusCode = httpClient.doPostJSON(url, jsonReq, stream);
-            if (statusOk(statusCode)) {
-                final String responseBody = stream.toString();
-                log.debug("Got " + responseBody);
-                final T response = gson.fromJson(responseBody, expectedResponse);
-                return response;
-            } else {
-                log.error("failed to call " + url + ": " + statusCode);
-                log.error("response: " + stream.toString());
-                throw new IOException("Post failed with " + statusCode);
+            HttpGet httpGet = new HttpGet(url);
+            CloseableHttpResponse response = httpclient.execute(httpGet);
+
+            try {
+                System.out.println(response.getStatusLine());
+                HttpEntity entity = response.getEntity();
+                // do something useful with the response body
+                // and ensure it is fully consumed
+                EntityUtils.consume(entity);
+                return  entity.toString();
+            } finally {
+                response.close();
             }
-        }
-    }
 
-    private boolean statusOk(final int statusCode) {
-        if (statusCode == 200) {
-            return true;
-        } else if (statusCode == 201) {
-            return true;
         }
-        return false;
     }
 
 }

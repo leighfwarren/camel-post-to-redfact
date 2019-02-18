@@ -17,9 +17,9 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Unit test for {@link ImageResponse}.
+ * Unit test
  *
- * @author mnova
+ * @author lfw
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ArticleTest {
