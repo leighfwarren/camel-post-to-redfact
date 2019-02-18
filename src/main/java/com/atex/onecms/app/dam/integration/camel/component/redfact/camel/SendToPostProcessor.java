@@ -18,6 +18,8 @@ import com.google.gson.GsonBuilder;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -73,23 +75,22 @@ public class SendToPostProcessor implements Processor {
         return response;
     }
 
-    private String sendJSON(final String url, final Object jsonReq) throws IOException {
+    private String sendJSON(final String url, final String jsonReq) throws IOException {
         try (final OutputStream stream = new ByteArrayOutputStream()) {
 
             CloseableHttpClient httpclient = HttpClients.createDefault();
 
-            HttpGet httpGet = new HttpGet(url);
-            CloseableHttpResponse response = httpclient.execute(httpGet);
+            HttpPost method = new HttpPost(url);
+            StringEntity entity = new StringEntity(jsonReq, "UTF-8");
+            method.setEntity(entity);
 
-            try {
+            try (CloseableHttpResponse response = httpclient.execute(method)) {
                 System.out.println(response.getStatusLine());
-                HttpEntity entity = response.getEntity();
+                HttpEntity responseEntity = response.getEntity();
                 // do something useful with the response body
                 // and ensure it is fully consumed
-                EntityUtils.consume(entity);
-                return  entity.toString();
-            } finally {
-                response.close();
+                EntityUtils.consume(responseEntity);
+                return responseEntity.toString();
             }
 
         }
