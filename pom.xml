@@ -4,11 +4,17 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <name>Atex dm.desk - camel-post-to-redfact-jar</name>
+  <name>Camel Post To Redfact</name>
+  <description>Camel Post To Redfact Plugin</description>
   <groupId>com.atex.plugins</groupId>
   <artifactId>camel-post-to-redfact</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
+
+  <organization>
+    <name>Atex</name>
+    <url>http://www.atex.com</url>
+  </organization>
 
   <parent>
     <groupId>com.polopoly</groupId>
@@ -173,6 +179,33 @@
             </goals>
             <phase>package</phase>
             <configuration>
+              <contentDataFileResources>
+                <!-- Uncomment to include javascript source files on plugin files
+                  content. <files> <directory>${project.basedir}/src/main/javascript</directory>
+                  <includes> <include>**/*.js</include> </includes> </files> -->
+                <!-- Uncomment to include css source files on plugin files content.
+                  <files> <directory>${project.basedir}/src/main/css</directory> <includes>
+                  <include>**/*.css</include> </includes> </files> -->
+                <files>
+                  <directory>${project.basedir}/src/main/contentfiles</directory>
+                  <includes>
+                    <include>**</include>
+                  </includes>
+                </files>
+                <files>
+                  <directory>${project.basedir}/src/main/content</directory>
+                  <includes>
+                    <include>**</include>
+                  </includes>
+                </files>
+                <!-- Remove this source directory if not used -->
+                <!--<files> -->
+                <!--<directory>${project.build.directory}/generated-contentfiles</directory> -->
+                <!--<includes> -->
+                <!--<include>**</include> -->
+                <!--</includes> -->
+                <!--</files> -->
+              </contentDataFileResources>
             </configuration>
           </execution>
         </executions>
@@ -190,8 +223,13 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-site-plugin</artifactId>
             <version>3.3</version>
+            <configuration>
+              <port>9000</port>
+              <tempWebappDirectory>${basedir}/target/site/tempdir</tempWebappDirectory>
+            </configuration>
             <executions>
               <execution>
+                <id>attach-site</id>
                 <goals>
                   <goal>jar</goal>
                 </goals>

@@ -1,6 +1,7 @@
 package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
 import com.atex.onecms.annotations.Composer;
+import com.atex.onecms.app.dam.integration.camel.component.redfact.config.RedfactConfigPolicy;
 import com.atex.onecms.app.dam.standard.aspects.OneImageBean;
 import com.atex.onecms.content.ContentManager;
 import com.atex.onecms.content.ContentResult;
@@ -34,7 +35,7 @@ public class DamImageToRedFactImageComposer implements ContentComposer<OneImageB
                                                    final Context<Object> context)
             throws CallbackException {
 
-        final RedFactProperties properties = RedFactProperties.getInstance();
+        RedfactConfig redfactConfig = RedfactConfig.getInstance();
 
         final OneImageBean damImage = source.getContent().getContentData();
 
@@ -48,8 +49,8 @@ public class DamImageToRedFactImageComposer implements ContentComposer<OneImageB
         // build the image url which will be a relative url
         // we will make it absolute in the processor.
 
-        final String imageUrl = new ImageServiceUrlBuilder(source.getContent(), properties.getOneCMSImagePrefix())
-                .format(properties.getImageFormat())
+        final String imageUrl = new ImageServiceUrlBuilder(source.getContent(), redfactConfig.getOneCMSImagePrefix())
+                .format(redfactConfig.getImageFormat())
                 .buildUrl();
 
         imageBean.setUrl(imageUrl);

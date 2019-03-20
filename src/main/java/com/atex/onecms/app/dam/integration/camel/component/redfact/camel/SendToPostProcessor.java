@@ -6,18 +6,18 @@ import java.io.OutputStream;
 import java.util.Date;
 
 import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactArticleBean;
+import com.atex.onecms.app.dam.integration.camel.component.redfact.RedfactApplication;
 import com.atex.onecms.app.dam.integration.camel.component.redfact.json.GSONCustomExclusionStrategy;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 
-import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactProperties;
+import com.atex.onecms.app.dam.integration.camel.component.redfact.RedfactConfig;
 import com.atex.onecms.app.dam.integration.camel.component.redfact.json.DateDeserializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -25,6 +25,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 
 /**
  * Simple processor that send content to Red Fact.
@@ -41,13 +43,9 @@ public class SendToPostProcessor implements Processor {
             .setExclusionStrategies(new GSONCustomExclusionStrategy())
             .create();
 
-    public SendToPostProcessor() {
-    }
-
     @Override
     public void process(final Exchange exchange) throws Exception {
 
-        log.error("TEST");
         log.info("SendToPostProcessor - start work");
 
         try {
@@ -68,8 +66,7 @@ public class SendToPostProcessor implements Processor {
 
         String articleJson = gson.toJson(articleBean);
 
-        RedFactProperties properties = RedFactProperties.getInstance();
-        String url = properties.getAPIUrl();
+        String url = RedfactConfig.getInstance().getApiUrl();
         String response = sendJSON(url, articleJson);
         log.info("response: " + response);
         return response;
