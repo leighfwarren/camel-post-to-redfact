@@ -11,17 +11,41 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <organization>
-    <name>Atex</name>
-    <url>http://www.atex.com</url>
-  </organization>
-
   <parent>
     <groupId>com.polopoly</groupId>
     <artifactId>public</artifactId>
     <version>10.16.7</version>
     <relativePath />
   </parent>
+
+  <organization>
+    <name>Atex</name>
+    <url>http://www.atex.com</url>
+  </organization>
+
+  <!-- artifact definition -->
+
+  <groupId>com.atex.plugins</groupId>
+  <artifactId>metadata-widget</artifactId>
+  <version>1.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <distributionManagement>
+    <repository>
+      <uniqueVersion>false</uniqueVersion>
+      <id>polopoly-pd-plugins</id>
+      <name>Polopoly Product Plugins</name>
+      <url>http://maven.polopoly.com/nexus/content/repositories/polopoly-pd-plugins</url>
+      <layout>default</layout>
+    </repository>
+    <snapshotRepository>
+      <uniqueVersion>false</uniqueVersion>
+      <id>polopoly-pd-plugins-snapshots</id>
+      <name>Polopoly Product Plugins Snapshots</name>
+      <url>http://maven.polopoly.com/nexus/content/repositories/polopoly-pd-plugins-snapshots</url>
+      <layout>default</layout>
+    </snapshotRepository>
+  </distributionManagement>
 
   <licenses>
     <license>
@@ -130,7 +154,7 @@
     </dependency>
 
   </dependencies>
-  
+
   <build>
 
     <resources>
@@ -217,19 +241,28 @@
   <profiles>
     <profile>
       <id>deploy</id>
+
+      <distributionManagement>
+        <repository>
+          <name>Polopoly PD Plugins</name>
+          <id>polopoly-pd-plugins</id>
+          <url>http://maven.polopoly.com/nexus/content/repositories/polopoly-pd-plugins</url>
+        </repository>
+        <snapshotRepository>
+          <name>Polopoly PD Plugins Snapshots</name>
+          <id>polopoly-pd-plugins-snapshots</id>
+          <url>http://maven.polopoly.com/nexus/content/repositories/polopoly-pd-plugins-snapshots</url>
+        </snapshotRepository>
+      </distributionManagement>
+
       <build>
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-site-plugin</artifactId>
             <version>3.3</version>
-            <configuration>
-              <port>9000</port>
-              <tempWebappDirectory>${basedir}/target/site/tempdir</tempWebappDirectory>
-            </configuration>
             <executions>
               <execution>
-                <id>attach-site</id>
                 <goals>
                   <goal>jar</goal>
                 </goals>
