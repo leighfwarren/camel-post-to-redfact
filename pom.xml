@@ -5,7 +5,7 @@
   <description>Camel Post To Redfact Plugin</description>
   <groupId>com.atex.plugins</groupId>
   <artifactId>camel-post-to-redfact</artifactId>
-  <version>1.2-SNAPSHOT</version>
+  <version>1.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <parent>
@@ -15,7 +15,7 @@
     <relativePath />
   </parent>
 
-  <organization>
+  <organization>              
     <name>Atex</name>
     <url>http://www.atex.com</url>
   </organization>
