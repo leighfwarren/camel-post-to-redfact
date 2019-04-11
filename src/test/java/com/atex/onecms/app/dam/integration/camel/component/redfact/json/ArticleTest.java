@@ -1,6 +1,6 @@
 package com.atex.onecms.app.dam.integration.camel.component.redfact.json;
 
-import com.atex.onecms.app.dam.standard.aspects.CustomArticleBean;
+import com.atex.onecms.app.dam.standard.aspects.OneArticleBean;
 import com.atex.onecms.app.dam.standard.aspects.OneImageBean;
 import com.atex.onecms.content.ContentId;
 import com.google.gson.Gson;
@@ -31,7 +31,7 @@ public class ArticleTest {
 
     @Test
     public void testArticleSerialize() {
-        CustomArticleBean b = new CustomArticleBean();
+        OneArticleBean b = new OneArticleBean();
         b.setAuthor("TEST_AUTHOR");
         List<ContentId> imageList = new ArrayList<>();
         b.setImages(imageList);

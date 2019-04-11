@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.util.Date;
 
 import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactArticleBean;
-import com.atex.onecms.app.dam.integration.camel.component.redfact.RedfactApplication;
 import com.atex.onecms.app.dam.integration.camel.component.redfact.json.GSONCustomExclusionStrategy;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
