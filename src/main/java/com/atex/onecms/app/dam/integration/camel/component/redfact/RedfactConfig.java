@@ -1,17 +1,7 @@
 package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
-import com.atex.onecms.content.ContentManager;
-import com.atex.onecms.content.RepositoryClient;
-import com.atex.onecms.content.files.FileService;
-import com.atex.onecms.ws.search.SearchClient;
-import com.atex.onecms.ws.search.SolrHttpClient;
-import com.polopoly.application.*;
-import com.polopoly.cm.ExternalContentId;
-import com.polopoly.cm.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.servlet.ServletContext;
 
 /**
  * Redfact properties.

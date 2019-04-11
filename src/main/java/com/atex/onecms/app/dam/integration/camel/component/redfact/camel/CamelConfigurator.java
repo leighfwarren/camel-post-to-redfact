@@ -12,7 +12,8 @@ import com.polopoly.cm.policy.PolicyCMServer;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.processor.interceptor.Tracer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.atex.onecms.app.dam.camel.CamelContextConfigurator;
@@ -25,7 +26,7 @@ import com.atex.onecms.app.dam.camel.CamelContextConfigurator;
 @Component
 public class CamelConfigurator implements CamelContextConfigurator {
 
-    private Logger log = Logger.getLogger(CamelConfigurator.class);
+    private Logger log = LoggerFactory.getLogger(CamelConfigurator.class);
 
     @Override
     public void configure(final CamelContext camelContext) throws Exception {

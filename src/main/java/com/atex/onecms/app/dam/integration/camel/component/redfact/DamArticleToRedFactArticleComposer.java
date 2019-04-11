@@ -2,7 +2,7 @@ package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
 import com.atex.onecms.annotations.Composer;
 import com.atex.onecms.app.dam.integration.camel.component.redfact.json.*;
-import com.atex.onecms.app.dam.standard.aspects.CustomArticleBean;
+import com.atex.onecms.app.dam.standard.aspects.OneArticleBean;
 import com.atex.onecms.content.ContentId;
 import com.atex.onecms.content.ContentManager;
 import com.atex.onecms.content.ContentResult;
@@ -15,17 +15,19 @@ import com.atex.onecms.content.mapping.Context;
 import com.atex.onecms.content.mapping.Request;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 /**
- * Composer used to create a {@link RedFactArticleBean} from a {@link CustomArticleBean}.
+ * Composer used to create a {@link RedFactArticleBean} from a {@link OneArticleBean}.
  *
  * @author mnova
  */
@@ -33,16 +35,18 @@ import java.util.List;
         variant = "com.atex.onecms.app.dam.integration.camel.component.redfact.article",
         type = "atex.onecms.article",
         variantId = "com.atex.onecms.app.dam.integration.camel.component.redfact.article.variantconfig")
-public class DamArticleToRedFactArticleComposer implements ContentComposer<CustomArticleBean, RedFactArticleBean, Object> {
+public class DamArticleToRedFactArticleComposer implements ContentComposer<OneArticleBean, RedFactArticleBean, Object> {
+
+    private static Logger log = LoggerFactory.getLogger(DamArticleToRedFactArticleComposer.class);
 
     @Override
-    public ContentResult<RedFactArticleBean> compose(final ContentResult<CustomArticleBean> source,
+    public ContentResult<RedFactArticleBean> compose(final ContentResult<OneArticleBean> source,
                                                      final String variant,
                                                      final Request request,
                                                      final Context<Object> context)
             throws CallbackException {
 
-        final CustomArticleBean damArticle = source.getContent().getContentData();
+        final OneArticleBean damArticle = source.getContent().getContentData();
 
         final RedFactArticleBean articleBean = new RedFactArticleBean();
 
@@ -73,7 +77,7 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<Custo
         return new ContentResult<>(source, articleBean);
     }
 
-    private RFMetaData getMetaData(CustomArticleBean damArticle) {
+    private RFMetaData getMetaData(OneArticleBean damArticle) {
         RFMetaData metaData = new RFMetaData();
 
         metaData.setName(damArticle.getName());
@@ -85,15 +89,21 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<Custo
             metaData.setCreatedDate(creationdate);
         }
 
-        long modificationdate = damArticle.getLastAmendedTime();
-        if (modificationdate > 0) {
-            Date dt = new Date(modificationdate);
-            metaData.setLastUpdate(dt);
+        try {
+            Method getLastAmendedTime = damArticle.getClass().getMethod("getLastAmendedTime");
+            Object modificationdate = getLastAmendedTime.invoke(damArticle);
+            if (modificationdate instanceof Long && ((Long)modificationdate) > 0) {
+                Date dt = new Date((Long) modificationdate);
+                metaData.setLastUpdate(dt);
+            }
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            log.debug("unable to get modification date",e);
         }
+
         return metaData;
     }
 
-    private RFInternetAttr getInternetAddr(CustomArticleBean damArticle) {
+    private RFInternetAttr getInternetAddr(OneArticleBean damArticle) {
         RFInternetAttr internetAttr = new RFInternetAttr();
         internetAttr.setFactBox("0");
         boolean h1 = damArticle.getName().startsWith("H1");
