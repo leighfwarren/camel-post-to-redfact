@@ -30,21 +30,7 @@ public class CamelConfigurator implements CamelContextConfigurator {
 
     @Override
     public void configure(final CamelContext camelContext) throws Exception {
-
-        RedfactConfig config;
-        try {
-            Application application = RedfactApplication.getApplication();
-            final CmClient cmClient = application.getPreferredApplicationComponent(CmClient.class);
-            final PolicyCMServer cmServer = cmClient.getPolicyCMServer();
-            RedfactConfigPolicy policy = (RedfactConfigPolicy) cmServer.getPolicy(new ExternalContentId(RedfactConfigPolicy.CONFIG_EXTERNAL_ID));
-            if (policy == null) throw new CMException("no redfact config");
-            config = policy.getConfig();
-            RedfactConfig.setInstance(config);
-
-        } catch (CMException | IllegalApplicationStateException e) {
-            log.debug("RedfactApplication: "+e.getMessage());
-        }
-
+        
         final SendToPostProcessor processor = new SendToPostProcessor();
 
         Tracer tracer = new Tracer();

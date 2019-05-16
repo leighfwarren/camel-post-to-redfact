@@ -25,11 +25,8 @@ public class RedfactConfig {
     }
 
     public static RedfactConfig getInstance() {
+        if (instance == null) instance = RedfactApplication.getRedFactConfig();
         return instance;
-    }
-
-    public static void setInstance(RedfactConfig instance) {
-        RedfactConfig.instance = instance;
     }
 
     public String getApiUrl() {
