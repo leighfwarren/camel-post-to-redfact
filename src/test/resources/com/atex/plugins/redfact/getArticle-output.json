@@ -1,0 +1,66 @@
+{
+	"id": "204135",
+	"name": "atex-name",
+	"description": "atex-description",
+	"category": "2122",
+	"status": "pu_all#wo_0",
+	"moddate": "1561994160",
+	"template": null,
+	"typist": "9",
+	"lastchg": "9",
+	"lastchgdate": "1561996020",
+	"valid_from": "1561994160",
+	"valid_till": "2145740400",
+	"base_ds_id": null,
+	"ref_ds_id": null,
+	"editor_teaser": null,
+	"editor_text": "test 2",
+	"pictures": null,
+	"direct_content": null,
+	"download": null,
+	"source": null,
+	"version_id": null,
+	"priority": null,
+	"update_denied": "0",
+	"comment_allowed": "1",
+	"comment_thread_id": "0",
+	"comments": null,
+	"payment_products": null,
+	"payment_free": "0",
+	"update_data": null,
+	"id_dpa": null,
+	"filename_dpa": null,
+	"id_atex": "7ed45796-6eba-4cce-b707-6e7bf1380124",
+	"catchline_atex": "nfy-test",
+	"import_id": "0",
+	"org_id": "0",
+	"import_source": "",
+	"import_file": "",
+	"related_content": "",
+	"byline": "",
+	"subheadline": "",
+	"author": "",
+	"teaser_picture": "0",
+	"topstory": "0",
+	"name_prestige": null,
+	"prestige_filename": null,
+	"info_article": "",
+	"moddate_day": "1561932000",
+	"exclusive": "0",
+	"relation_fields": {
+		"category": {
+			"1": [
+				"ka",
+				2122
+			]
+		}
+	},
+	"relations": {
+		"ka": {
+			"category": [
+				2122
+			]
+		}
+	},
+	"tagging": []
+}

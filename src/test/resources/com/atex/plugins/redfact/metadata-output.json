@@ -1,0 +1,426 @@
+{
+  "id": {
+    "cmsType": "nfy_hidden",
+    "dbMetaType": "I"
+  },
+  "status": {
+    "cmsType": "nfy_hidden",
+    "cmsRule": [
+      "required"
+    ],
+    "dbMetaType": "C"
+  },
+  "description": {
+    "maxLength": 255,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Beschreibung",
+    "cmsRule": [
+      "maxlength"
+    ],
+    "dbMetaType": "C"
+  },
+  "category": {
+    "cmsType": "select",
+    "cmsValues": {
+      "3174": "50plus",
+      "3358": "Apothekenspecial",
+      "2104": "arBildung",
+      "3261": "Architektur",
+      "2018": "Aus den Vereinen",
+      "3177": "Balkon - Fassade und Terrasse",
+      "2064": "Bauen und Wohnen",
+      "3180": "Berufsausbildung",
+      "2088": "Dossier",
+      "3337": "Eilmeldungen",
+      "3185": "Einbruch und Sicherheit",
+      "3286": "Erstes Auto und F\u00fchrerschein",
+      "2106": "Familienanzeigen",
+      "3189": "Fenster und T\u00fcren",
+      "3201": "Gewerbe Hegelstra\u00dfe (Kirchheim)",
+      "3203": "Gewerbegebiet Kruichling",
+      "3204": "Gewerbegebiet Lenningen",
+      "3209": "Gewerbegebiet Schlierbach",
+      "3210": "Gewerbegebiete Weilheim",
+      "3194": "Golf Trendsportart",
+      "3196": "Hochzeit",
+      "3202": "IG Holzmaden",
+      "3205": "IG Notzingen",
+      "2078": "Infoartikel",
+      "3350": "Junge Familie",
+      "2082": "Junge Zeitung",
+      "2122": "Kirchheim",
+      "2117": "Kirchheimer Umland",
+      "2118": "Lenninger Tal",
+      "2019": "Lokale Geschichte",
+      "2016": "Lokale Kultur",
+      "2017": "Lokale Wirtschaft",
+      "2020": "Lokales",
+      "3380": "Lokalnachrichten",
+      "2015": "Lokalsport",
+      "3231": "Mobilit\u00e4t",
+      "2011": "Newsticker",
+      "3389": "Offline Artikel",
+      "2123": "Polizeiberichte",
+      "2033": "Prestige-Lok1",
+      "3338": "Rund um die Teck",
+      "3257": "Senioren",
+      "3371": "Serie Garten",
+      "3373": "Serie_Verkehrssicherheit ",
+      "3372": "Serien",
+      "3385": "Spielberichte",
+      "3260": "Start in den Urlaub",
+      "3339": "Tag der Pflege",
+      "3348": "Tag des Deutschen Brotes",
+      "3377": "Tag des Fu\u00dfes",
+      "3264": "Tag des Gartens",
+      "3374": "Teckbotenpokal",
+      "2031": "Themenwelt (Ar)",
+      "3266": "Tierisch gut",
+      "3278": "Trauer-Ratgeber",
+      "3285": "TSV Weilheim",
+      "2030": "TW Bauen & Wohnen",
+      "2037": "TW Gesundheit",
+      "2038": "TW KFZ",
+      "2036": "TW Leben & Freizeit",
+      "2035": "TW Lokale Themen",
+      "2039": "TW Reisen & Urlaub",
+      "2040": "TW Sonstiges",
+      "2029": "TW Wirtschaft",
+      "3175": "TW-Feed Aktiv",
+      "2051": "TW-Feed Aktiv - Das Gesundheitsmagazin",
+      "2060": "TW-Feed Anpfiff",
+      "3176": "TW-Feed Anpfiff",
+      "2066": "TW-Feed Architektur",
+      "3179": "TW-Feed Bau-Innung",
+      "3182": "TW-Feed Beauty und Frisurentrends",
+      "3183": "TW-Feed Berufswelten pmhs",
+      "2068": "TW-Feed B\u00fcro, B\u00fcro",
+      "3186": "TW-Feed Ergotherapie",
+      "3187": "TW-Feed Erneuerbare Energien",
+      "3188": "TW-Feed Fachkr\u00e4ftesicherung",
+      "2054": "TW-Feed Fit & Gesund, Wellness",
+      "2065": "TW-Feed Garten im Fr\u00fchling",
+      "2067": "TW-Feed Garten im Herbst",
+      "2063": "TW-Feed Gastlichkeit",
+      "3193": "TW-Feed Gastlichkeit Teckbote",
+      "3190": "TW-Feed Geschenkideen",
+      "3192": "TW-Feed Gesund Schlafen",
+      "3191": "TW-Feed Gesunde Ern\u00e4hrung",
+      "3195": "TW-Feed Heilberufe",
+      "2058": "TW-Feed Hochzeit",
+      "3197": "TW-Feed IG Au (Weilheim)",
+      "3198": "TW-Feed IG Bissingen",
+      "3199": "TW-Feed IG Bohnau (Kirchheim)",
+      "3200": "TW-Feed IG Dettingen",
+      "3283": "TW-Feed IG Neidlingen",
+      "3206": "TW-Feed IG Ohmden",
+      "3207": "TW-Feed IG \u00d6tlingen\/Lindorf",
+      "3208": "TW-Feed IG Owen",
+      "2074": "TW-Feed Im Fokus",
+      "2075": "TW-Feed Industriegebiet",
+      "3211": "TW-Feed Innenausbau",
+      "3333": "TW-Feed Junge Familie",
+      "3212": "TW-Feed Kaffee, Kuchen, Eis",
+      "2070": "TW-Feed Kapital & Versicherung",
+      "3213": "TW-Feed Kapital und Versicherung",
+      "2048": "TW-Feed KFZ-Fr\u00fchling",
+      "3214": "TW-Feed Kfz-Fr\u00fchling",
+      "2049": "TW-Feed KFZ-Herbst",
+      "3216": "TW-Feed Kfz-Herbst",
+      "2050": "TW-Feed KFZ-Innung",
+      "3215": "TW-Feed Kfz-Innung",
+      "2073": "TW-Feed Kirchheimer Markt",
+      "3217": "TW-Feed Kirschbl\u00fctentag Weilheim",
+      "2072": "TW-Feed Kollektiv",
+      "2057": "TW-Feed Konfirmation & Kommunion",
+      "3218": "TW-Feed Konfirmation und Kommunion",
+      "3219": "TW-Feed Kreativit\u00e4t",
+      "2047": "TW-Feed Kreuzfahrten-Spezial",
+      "3220": "TW-Feed KSK-Immobilientag",
+      "3228": "TW-Feed Leben und Wohnen im Alter",
+      "3229": "TW-Feed Lebensmittel aus der Region",
+      "2076": "TW-Feed Lenninger Tal",
+      "3279": "TW-Feed Lossprechung",
+      "3230": "TW-Feed Mitternachts-Shopping",
+      "2056": "TW-Feed Neue Kurse",
+      "3232": "TW-Feed Neue Kurse",
+      "3233": "TW-Feed \u00d6ffnungszeiten",
+      "3234": "TW-Feed Ortsvorstellung Bissingen",
+      "3235": "TW-Feed Ortsvorstellung Dettingen",
+      "3236": "TW-Feed Ortsvorstellung Holzmaden",
+      "3237": "TW-Feed Ortsvorstellung Jesingen",
+      "3238": "TW-Feed Ortsvorstellung Kirchheim",
+      "3239": "TW-Feed Ortsvorstellung Lenningen",
+      "3240": "TW-Feed Ortsvorstellung Lindorf",
+      "3241": "TW-Feed Ortsvorstellung Nabern",
+      "3242": "TW-Feed Ortsvorstellung Neidlingen",
+      "3243": "TW-Feed Ortsvorstellung Notzingen",
+      "3244": "TW-Feed Ortsvorstellung Ohmden",
+      "3245": "TW-Feed Ortsvorstellung \u00d6tlingen",
+      "3247": "TW-Feed Ortsvorstellung Schlierbach",
+      "3248": "TW-Feed Ortsvorstellung Weilheim",
+      "3249": "TW-Feed Owen leuchtet",
+      "2071": "TW-Feed Recht & Steuer",
+      "3250": "TW-Feed Recht und Steuern",
+      "3251": "TW-Feed Recycling und Entsorgung",
+      "3252": "TW-Feed Reha-Tag",
+      "3253": "TW-Feed Renovieren und Modernisieren",
+      "3254": "TW-Feed R\u00fcckengesundheit",
+      "2061": "TW-Feed Schulanfang",
+      "3255": "TW-Feed Schulanfang",
+      "3256": "TW-Feed Sehen und H\u00f6ren",
+      "2059": "TW-Feed Senioren",
+      "2042": "TW-Feed Sonstiges",
+      "3259": "TW-Feed Sport im Herbst und Winter",
+      "2046": "TW-Feed Start in den Urlaub",
+      "3346": "TW-Feed Tag der Apotheke",
+      "3288": "TW-Feed Tag der Pflege",
+      "3263": "TW-Feed Tag des Bieres",
+      "3287": "TW-Feed Tag des Deutschen Brotes",
+      "3265": "TW-Feed Tag des Handwerks",
+      "3267": "TW-Feed Tobelwasen",
+      "2055": "TW-Feed Trau Dich",
+      "3268": "TW-Feed Trau Dich!",
+      "3269": "TW-Feed Trauerbegleiter",
+      "2044": "TW-Feed Urlaub daheim",
+      "2043": "TW-Feed Urlaubsapotheke-Spezial",
+      "3272": "TW-Feed VOS Dettingen",
+      "3273": "TW-Feed Wandern",
+      "2041": "TW-Feed Weihnachtsgr\u00fc\u00dfe",
+      "3274": "TW-Feed Weihnachtsgr\u00fc\u00dfe",
+      "2077": "TW-Feed Weilheim & Umgebung",
+      "3282": "TW-Feed Weilheimer Einkauf",
+      "3275": "TW-Feed Weilheimer Herbststurm",
+      "3276": "TW-Feed Wellness und Gesundheit",
+      "3221": "TW-Feed Weltspartag",
+      "2045": "TW-Feed Wintersport",
+      "3222": "TW-Feed Wintersport",
+      "3223": "TW-Feed Wohnkultur Bad und K\u00fcche",
+      "2052": "TW-Feed Zahn\u00e4rzte",
+      "3224": "TW-Feed Zahn\u00e4rzte",
+      "2053": "TW-Feed Zahngesundheit",
+      "3227": "TW-Feed Zimmerei-Innung",
+      "2062": "TW-Feed Zweirad",
+      "3226": "TW-Feed Zweirad-Fr\u00fchling",
+      "3270": "Unfall - was tun?!",
+      "2014": "Unzugeordnete Artikel",
+      "3271": "Urlaub daheim",
+      "3284": "VfL Kirchheim Knights",
+      "2120": "Weilheim und Umgebung",
+      "3258": "Weilheimer SommerAktionstage",
+      "3225": "Zahngesundheit",
+      "2119": "Zwischen Neckar und Alb"
+    },
+    "cmsFieldHeadline": "Kategorie",
+    "cmsRule": [
+      "required"
+    ],
+    "dbMetaType": "I"
+  },
+  "base_ds_id": {
+    "cmsType": "nfy_hidden",
+    "dbMetaType": "I"
+  },
+  "name": {
+    "cmsType": "text",
+    "cmsFieldHeadline": "145#name",
+    "cmsRule": [
+      "required"
+    ],
+    "dbMetaType": "C"
+  },
+  "subheadline": {
+    "cmsType": "text",
+    "cmsFieldHeadline": "Unterzeile",
+    "dbMetaType": "C"
+  },
+  "editor_teaser": {
+    "cmsType": "text",
+    "cmsFieldHeadline": "Anreisser",
+    "dbMetaType": "X"
+  },
+  "editor_text": {
+    "cmsType": "text",
+    "cmsFieldHeadline": "Text",
+    "dbMetaType": "X"
+  },
+  "direct_content": {
+    "cmsType": "nfy_relation",
+    "relationType": "multi",
+    "possibleModules": [
+      "mediagal",
+      "img",
+      "um"
+    ],
+    "cmsFieldHeadline": "Direkte Inhalte",
+    "cmsRule": [
+      "checkUniqueRelation"
+    ],
+    "dbMetaType": "X"
+  },
+  "related_content": {
+    "cmsType": "nfy_relation",
+    "relationType": "multi",
+    "possibleModules": [
+      "ar"
+    ],
+    "cmsFieldHeadline": "Weiterf\u00fchrende Artikel",
+    "cmsRule": [
+      "checkUniqueRelation"
+    ],
+    "dbMetaType": "X"
+  },
+  "info_article": {
+    "cmsType": "nfy_relation",
+    "relationType": "singular",
+    "possibleModules": "ar",
+    "cmsFieldHeadline": "Info-Kasten",
+    "cmsRule": [
+      "checkUniqueRelation"
+    ],
+    "dbMetaType": "C"
+  },
+  "exclusive": {
+    "cmsType": "advcheckbox",
+    "cmsFieldHeadline": "exklusiver Artikel",
+    "dbMetaType": "I"
+  },
+  "id_atex": {
+    "maxLength": 64,
+    "cmsType": "text",
+    "cmsFieldHeadline": "145#id_atex",
+    "cmsRule": [
+      "checkUniqueDS"
+    ],
+    "dbMetaType": "C"
+  },
+  "catchline_atex": {
+    "maxLength": 255,
+    "cmsType": "text",
+    "cmsFieldHeadline": "145#catchline_atex",
+    "dbMetaType": "C"
+  },
+  "moddate_day": {
+    "cmsType": "nfy_date",
+    "cmsFieldHeadline": "Sortierbares Datum",
+    "dbMetaType": "I"
+  },
+  "topstory": {
+    "maxLength": 11,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Top-Story",
+    "dbMetaType": "I"
+  },
+  "priority": {
+    "maxLength": 11,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Priorit\u00e4t",
+    "dbMetaType": "I"
+  },
+  "author": {
+    "maxLength": 255,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Autor",
+    "dbMetaType": "C"
+  },
+  "update_denied": {
+    "cmsType": "advcheckbox",
+    "cmsFieldHeadline": "Update unterbinden:",
+    "dbMetaType": "I"
+  },
+  "source": {
+    "maxLength": 16,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Quelle:",
+    "dbMetaType": "C"
+  },
+  "version_id": {
+    "maxLength": 14,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Version ID:",
+    "dbMetaType": "I"
+  },
+  "org_id": {
+    "maxLength": 14,
+    "cmsType": "text",
+    "cmsFieldHeadline": "ORG-ID:",
+    "dbMetaType": "I"
+  },
+  "id_dpa": {
+    "maxLength": 255,
+    "cmsType": "text",
+    "cmsFieldHeadline": "DPA_ID",
+    "dbMetaType": "C"
+  },
+  "filename_dpa": {
+    "maxLength": 255,
+    "cmsType": "text",
+    "cmsFieldHeadline": "DPA-Dateiname",
+    "dbMetaType": "C"
+  },
+  "import_id": {
+    "maxLength": 13,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Import-ID",
+    "dbMetaType": "I"
+  },
+  "import_source": {
+    "maxLength": 32,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Import Quelle",
+    "dbMetaType": "C"
+  },
+  "import_file": {
+    "maxLength": 255,
+    "cmsType": "text",
+    "cmsFieldHeadline": "Import-Datei",
+    "dbMetaType": "C"
+  },
+  "name_prestige": {
+    "maxLength": 200,
+    "cmsType": "text",
+    "cmsFieldHeadline": "PRESTIGE-NAME:",
+    "dbMetaType": "C"
+  },
+  "prestige_filename": {
+    "maxLength": 255,
+    "cmsType": "text",
+    "cmsFieldHeadline": "PRESTIGE-DATEI:",
+    "dbMetaType": "C"
+  },
+  "comment_allowed": {
+    "cmsType": "advcheckbox",
+    "cmsFieldHeadline": "Kommentare erlauben?:",
+    "dbMetaType": "I"
+  },
+  "comment_thread_id": {
+    "cmsType": "nfy_hidden",
+    "dbMetaType": "I"
+  },
+  "payment_free": {
+    "cmsType": "nfy_hidden",
+    "dbMetaType": "I"
+  },
+  "valid_from": {
+    "cmsType": "timestamp",
+    "cmsFieldHeadline": "G\u00fcltig von",
+    "dbMetaType": "I"
+  },
+  "valid_till": {
+    "cmsType": "timestamp",
+    "cmsFieldHeadline": "G\u00fcltig bis",
+    "dbMetaType": "I"
+  },
+  "moddate": {
+    "cmsType": "timestamp",
+    "cmsFieldHeadline": "Erstellungsdatum",
+    "dbMetaType": "I"
+  },
+  "lastchgdate": {
+    "cmsType": "nfy_hidden",
+    "cmsRule": [
+      "numeric"
+    ],
+    "dbMetaType": "I"
+  }
+}

@@ -15,6 +15,8 @@ import com.atex.onecms.content.mapping.Context;
 import com.atex.onecms.content.mapping.Request;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,33 +51,43 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<OneAr
 
         final OneArticleBean damArticle = source.getContent().getContentData();
 
-        final RedFactArticleBean articleBean = new RedFactArticleBean();
+        final RedFactArticleBean redFactArticleBean = new RedFactArticleBean();
 
-        articleBean.setContentId(source.getContentId().getContentId());
-
-        String headline = damArticle.getHeadline().getText();
-        String body = damArticle.getBody().getText();
-
-        articleBean.setHeading(headline);
-        articleBean.setBaseText(body);
-        articleBean.setInternetAttr(getInternetAddr(damArticle));
-        articleBean.setMetadata(getMetaData(damArticle));
-        articleBean.setTeaser(damArticle.getLead().getText());
-        articleBean.setPictures(new ArrayList<>());
-        articleBean.setAutor(damArticle.getAuthor());
-
-        // try to get the associated images.
-        final List<ContentId> images = damArticle.getImages();
-        if (images != null) {
-            for (final ContentId contentId : images) {
-                final RedFactImageBean image = getImageVariant(context.getContentManager(), contentId);
-                if (image != null) {
-                    articleBean.getPictures().add(image);
-                }
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("name",damArticle.getHeadline().getText()));
+//        params.add(new BasicNameValuePair("subheadline",redFactArticleBean.?????()));
+        params.add(new BasicNameValuePair("editor_teaser",damArticle.getLead().getText()));
+        params.add(new BasicNameValuePair("editor_text",damArticle.getBody().getText()));
+        params.add(new BasicNameValuePair("author",damArticle.getAuthor()));
+        params.add(new BasicNameValuePair("id_atex",source.getContentId().getContentId().getKey()));
+//        params.add(new BasicNameValuePair("version_id",source.getContentId().getContentId().getDelegationId())); // number only
+        params.add(new BasicNameValuePair("priority",Integer.toString(calculatePriority(damArticle.getName(), damArticle.getWords()))));
+        String topStory = getTopStory(damArticle);
+        params.add(new BasicNameValuePair("topstory",topStory));
+        com.atex.onecms.app.dam.types.TimeState t = damArticle.getTimeState();
+        if (t != null) {
+            Long offtime = t.getOfftime();
+            Long ontime = t.getOntime();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddZHH:mm:ss");
+            if (offtime != null && offtime != 0) {
+                LocalDateTime dt = LocalDateTime.ofEpochSecond(offtime,0, ZoneOffset.UTC);
+                params.add(new BasicNameValuePair("valid_from",formatter.format(dt)));
+            }
+            if (ontime != null && ontime != 0) {
+                LocalDateTime dt = LocalDateTime.ofEpochSecond(ontime,0, ZoneOffset.UTC);
+                params.add(new BasicNameValuePair("valid_till",formatter.format(dt)));
             }
         }
+        params.add(new BasicNameValuePair("lastchgdate",getLastModifiedDate(damArticle)));
+        params.add(new BasicNameValuePair("catchline_atex",damArticle.getSection()));
+        redFactArticleBean.setParams(params);
 
-        return new ContentResult<>(source, articleBean);
+        return new ContentResult<>(source, redFactArticleBean);
+    }
+
+    public String getTopStory(OneArticleBean damArticle) {
+        boolean h1 = damArticle.getName().startsWith("H1");
+        return (h1) ? "1" : "0";
     }
 
     private RFMetaData getMetaData(OneArticleBean damArticle) {
@@ -89,49 +102,27 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<OneAr
             metaData.setCreatedDate(creationdate);
         }
 
-        try {
-            Method getLastAmendedTime = damArticle.getClass().getMethod("getLastAmendedTime");
-            Object modificationdate = getLastAmendedTime.invoke(damArticle);
-            if (modificationdate instanceof Long && ((Long)modificationdate) > 0) {
-                Date dt = new Date((Long) modificationdate);
-                metaData.setLastUpdate(dt);
-            }
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            log.debug("unable to get modification date",e);
-        }
 
         return metaData;
     }
 
-    private RFInternetAttr getInternetAddr(OneArticleBean damArticle) {
-        RFInternetAttr internetAttr = new RFInternetAttr();
-        internetAttr.setFactBox("0");
-        boolean h1 = damArticle.getName().startsWith("H1");
-        String topStory = (h1) ? "1":"0";
-        internetAttr.setTopStory(topStory);
-        internetAttr.setPrio(calculatePriority(damArticle.getName(), damArticle.getWords()));
-        com.atex.onecms.app.dam.types.TimeState t = damArticle.getTimeState();
-        if (t != null) {
-            Long offtime = t.getOfftime();
-            Long ontime = t.getOfftime();
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm:ss");
-            if (offtime != null && offtime != 0) {
-                LocalDateTime dt = LocalDateTime.ofEpochSecond(offtime,0, ZoneOffset.UTC);
-                internetAttr.setWebBegin(dt);
+    private String getLastModifiedDate(OneArticleBean damArticle) {
+        try {
+            Method getLastAmendedTime = damArticle.getClass().getMethod("getLastAmendedTime");
+            if (getLastAmendedTime == null) {
+                log.warn("Unable to get getLastAmendedTime method, on article.  No modified time available");
+                return "";
             }
-            if (ontime != null && ontime != 0) {
-                LocalDateTime dt = LocalDateTime.ofEpochSecond(ontime,0, ZoneOffset.UTC);
-                internetAttr.setWebEnd(dt);
+            Object modificationdate = getLastAmendedTime.invoke(damArticle);
+            if (modificationdate instanceof Long && ((Long)modificationdate) > 0) {
+                LocalDateTime dt = LocalDateTime.ofEpochSecond((Long)modificationdate,0, ZoneOffset.UTC);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm:ss");
+                return formatter.format(dt);
             }
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            log.debug("unable to get modification date",e);
         }
-        List<RFSection> rfSections = new ArrayList<>();
-        String section = damArticle.getSection();
-        RFSection rfSection = new RFSection();
-        rfSection.setName(section);
-        rfSections.add(rfSection);
-        internetAttr.setSections(rfSections);
-
-        return internetAttr;
+        return "";
     }
 
     private int calculatePriority(String name, int wordCount) {
@@ -140,29 +131,6 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<OneAr
         if (wordCount < 401) return 3;
         if (wordCount < 601) return 2;
         return 1;
-    }
-
-
-    private RedFactImageBean getImageVariant(final ContentManager contentManager, final ContentId contentId) {
-        final ContentVersionId latestVersion = contentManager.resolve(contentId, Subject.NOBODY_CALLER);
-        final ContentResult<RedFactImageBean> cr = contentManager.get(latestVersion, RedFactImageBean.VARIANTNAME, RedFactImageBean.class, null, Subject.NOBODY_CALLER);
-        if (cr != null && (cr.getStatus() == Status.OK) && (cr.getContent() != null)) {
-            return cr.getContent().getContentData();
-        }
-        return null;
-    }
-
-    private String removeHTML(String value) {
-        if (!Strings.isNullOrEmpty(value)) {
-            value = value.replaceAll("<(.|\\n)+?>", "");
-            value = value.replaceAll("\\s+", " ");
-            value = value.replaceAll("&nbsp;", " ");
-        }
-        return value;
-    }
-
-    private String truncateWords(final String value, int blankCount) {
-        return truncateWords(value, blankCount, " ...");
     }
 
     private String truncateWords(final String value, int blankCount, final String suffix) {

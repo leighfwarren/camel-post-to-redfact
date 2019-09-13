@@ -9,7 +9,7 @@ import com.polopoly.model.DescribesModelType;
 @DescribesModelType
 public class RedfactConfigPolicy extends ContentPolicy{
 
-    public static final String CONFIG_EXTERNAL_ID = "com.atex.plugins.camelposttoredfact.ConfigHome";
+    public static final String CONFIG_EXTERNAL_ID = "plugins.com.atex.plugins.camel-post-to-redfact.Config";
 
     protected static final String USERNAME = "username";
     protected static final String PASSWORD = "password";
