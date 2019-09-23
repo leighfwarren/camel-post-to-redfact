@@ -37,7 +37,7 @@ public class RedfactApplication implements ApplicationOnAfterInitEvent {
         try {
             final CmClient cmClient = application.getPreferredApplicationComponent(CmClient.class);
             final PolicyCMServer cmServer = cmClient.getPolicyCMServer();
-            RedfactConfigPolicy policy = (RedfactConfigPolicy) cmServer.getPolicy(new ExternalContentId(RedfactConfigPolicy.CONFIG_EXTERNAL_ID));
+            RedfactConfigPolicy policy = (RedfactConfigPolicy) cmServer.getPolicy(new ExternalContentId("plugins.com.atex.plugins.camel-post-to-redfact.Config"));
             if (policy == null) throw new CMException("no redfact config");
             config = policy.getConfig();
             return config;

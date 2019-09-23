@@ -54,6 +54,11 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<OneAr
         final RedFactArticleBean redFactArticleBean = new RedFactArticleBean();
 
         List<NameValuePair> params = new ArrayList<>();
+        // fixed params
+        params.add(new BasicNameValuePair("catchline_atex", "nfy-test")); // fixed
+        params.add(new BasicNameValuePair("category", "2014")); // fixed
+        params.add(new BasicNameValuePair("status", "pu_all#wo_0")); // fixed
+        // end fixed
         params.add(new BasicNameValuePair("name",damArticle.getHeadline().getText()));
 //        params.add(new BasicNameValuePair("subheadline",redFactArticleBean.?????()));
         params.add(new BasicNameValuePair("editor_teaser",damArticle.getLead().getText()));
