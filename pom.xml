@@ -67,10 +67,10 @@
   </scm>
 
   <properties>
-    <polopoly.version>10.16.5-fp2</polopoly.version>
+    <polopoly.version>10.18.0</polopoly.version>
     <camel.version>2.13.2</camel.version>
     <spring.version>4.1.0.RELEASE</spring.version>
-    <desk.version>2.10.1-SNAPSHOT</desk.version>
+    <desk.version>2.10.3-SNAPSHOT</desk.version>
   </properties>
 
   <dependencies>

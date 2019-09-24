@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactArticleBean;
@@ -63,29 +64,39 @@ public class SendToPostProcessor implements Processor {
     private String sendArticleToRedFact(final RedFactArticleBean articleBean) throws IOException {
 
         String url = RedfactConfig.getInstance().getApiUrl();
-        String response = sendForm(url, articleBean.getParams());
-        log.info("response: " + response);
-        return response;
+        CloseableHttpResponse response = sendForm(url, articleBean.getParams());
+        log.info("response: " + response.getEntity().toString());
+        if (response.getStatusLine().getStatusCode() == 412) {
+            log.info("create failed, sending update");
+            // either article failed or needs exists
+            // try to update instead
+            String updateUrl = url;
+            if (!updateUrl.endsWith("/")) updateUrl += "/";
+            for (NameValuePair param : articleBean.getParams()) {
+                if (param.getName().equals("id_atex")) {
+                    updateUrl += param.getValue();
+                    break;
+                }
+            }
+            log.info("sending update url:"+updateUrl);
+            response = sendForm(updateUrl, articleBean.getParams());
+            log.info("update response: " + response.getEntity().toString());
+        }
+        log.info("status = "+response.getStatusLine().getStatusCode());
+        return response.getEntity().toString();
     }
 
-    private String sendForm(final String url, final List<NameValuePair> params) throws IOException {
+    private CloseableHttpResponse sendForm(final String url, final List<NameValuePair> params) throws IOException {
         try (final OutputStream stream = new ByteArrayOutputStream()) {
-
             CloseableHttpClient httpclient = HttpClients.createDefault();
-
             HttpPost method = new HttpPost(url);
-
             method.setEntity(new UrlEncodedFormEntity(params));
-
             try (CloseableHttpResponse response = httpclient.execute(method)) {
                 System.out.println(response.getStatusLine());
                 HttpEntity responseEntity = response.getEntity();
-                // do something useful with the response body
-                // and ensure it is fully consumed
                 EntityUtils.consume(responseEntity);
-                return responseEntity.toString();
+                return response;
             }
-
         }
     }
 
