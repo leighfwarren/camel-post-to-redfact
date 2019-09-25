@@ -55,7 +55,7 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<OneAr
 
         List<NameValuePair> params = new ArrayList<>();
         // fixed params
-        params.add(new BasicNameValuePair("catchline_atex", "nfy-test")); // fixed
+        params.add(new BasicNameValuePair("catchline_atex", "Ressort 1")); // fixed
         params.add(new BasicNameValuePair("category", "2014")); // fixed
         params.add(new BasicNameValuePair("status", "pu_all#wo_0")); // fixed
         // end fixed

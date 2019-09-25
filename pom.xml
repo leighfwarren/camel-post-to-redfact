@@ -76,10 +76,17 @@
   <dependencies>
 
     <dependency>
+      <groupId>com.polopoly</groupId>
+      <artifactId>polopoly</artifactId>
+      <version>${polopoly.version}</version>
+      <classifier>api</classifier>
+      <type>jar</type>
+    </dependency>
+
+    <dependency>
       <groupId>com.atex</groupId>
       <artifactId>module-desk</artifactId>
       <version>${desk.version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>
