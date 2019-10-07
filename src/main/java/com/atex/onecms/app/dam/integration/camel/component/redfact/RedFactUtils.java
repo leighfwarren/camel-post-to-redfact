@@ -1,14 +1,7 @@
 package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
-import com.atex.onecms.annotations.Composer;
-import com.atex.onecms.app.dam.integration.camel.component.redfact.json.*;
 import com.atex.onecms.app.dam.standard.aspects.OneArticleBean;
-import com.atex.onecms.content.ContentId;
-import com.atex.onecms.content.ContentManager;
 import com.atex.onecms.content.ContentResult;
-import com.atex.onecms.content.ContentVersionId;
-import com.atex.onecms.content.Status;
-import com.atex.onecms.content.Subject;
 import com.atex.onecms.content.callback.CallbackException;
 import com.atex.onecms.content.mapping.ContentComposer;
 import com.atex.onecms.content.mapping.Context;
@@ -23,36 +16,31 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * Composer used to create a {@link RedFactArticleBean} from a {@link OneArticleBean}.
- *
- * @author mnova
- */
-@Composer(
-        variant = "com.atex.onecms.app.dam.integration.camel.component.redfact.article",
-        type = "atex.onecms.article",
-        variantId = "com.atex.onecms.app.dam.integration.camel.component.redfact.article.variantconfig")
-public class DamArticleToRedFactArticleComposer implements ContentComposer<OneArticleBean, RedFactArticleBean, Object> {
 
-    private static Logger log = LoggerFactory.getLogger(DamArticleToRedFactArticleComposer.class);
+public class RedFactUtils {
 
-    @Override
-    public ContentResult<RedFactArticleBean> compose(final ContentResult<OneArticleBean> source,
-                                                     final String variant,
-                                                     final Request request,
-                                                     final Context<Object> context)
+    private static Logger log = LoggerFactory.getLogger(RedFactUtils.class);
+
+    public List<NameValuePair> convert(final ContentResult<OneArticleBean> source)
             throws CallbackException {
 
         final OneArticleBean damArticle = source.getContent().getContentData();
 
-        final RedFactArticleBean redFactArticleBean = new RedFactArticleBean();
+        List<NameValuePair> params = getNameValuePairs(source, damArticle);
 
+        return params;
+    }
+
+    public List<NameValuePair> getNameValuePairs(ContentResult<OneArticleBean> source, OneArticleBean damArticle) {
         List<NameValuePair> params = new ArrayList<>();
         // fixed params
         params.add(new BasicNameValuePair("catchline_atex", "Ressort 1")); // fixed
@@ -73,42 +61,24 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<OneAr
         if (t != null) {
             Long offtime = t.getOfftime();
             Long ontime = t.getOntime();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddZHH:mm:ss");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             if (offtime != null && offtime != 0) {
-                LocalDateTime dt = LocalDateTime.ofEpochSecond(offtime,0, ZoneOffset.UTC);
+                LocalDateTime dt = LocalDateTime.ofEpochSecond(offtime/1000,0,ZoneOffset.UTC);
                 params.add(new BasicNameValuePair("valid_from",formatter.format(dt)));
             }
             if (ontime != null && ontime != 0) {
-                LocalDateTime dt = LocalDateTime.ofEpochSecond(ontime,0, ZoneOffset.UTC);
+                LocalDateTime dt = LocalDateTime.ofEpochSecond(offtime/1000,0,ZoneOffset.UTC);
                 params.add(new BasicNameValuePair("valid_till",formatter.format(dt)));
             }
         }
         params.add(new BasicNameValuePair("lastchgdate",getLastModifiedDate(damArticle)));
         params.add(new BasicNameValuePair("catchline_atex",damArticle.getSection()));
-        redFactArticleBean.setParams(params);
-
-        return new ContentResult<>(source, redFactArticleBean);
+        return params;
     }
 
-    public String getTopStory(OneArticleBean damArticle) {
+    private String getTopStory(OneArticleBean damArticle) {
         boolean h1 = damArticle.getName().startsWith("H1");
         return (h1) ? "1" : "0";
-    }
-
-    private RFMetaData getMetaData(OneArticleBean damArticle) {
-        RFMetaData metaData = new RFMetaData();
-
-        metaData.setName(damArticle.getName());
-        metaData.setFactBox(0);
-
-        Date creationdate = damArticle.getCreationdate();
-
-        if (creationdate != null) {
-            metaData.setCreatedDate(creationdate);
-        }
-
-
-        return metaData;
     }
 
     private String getLastModifiedDate(OneArticleBean damArticle) {

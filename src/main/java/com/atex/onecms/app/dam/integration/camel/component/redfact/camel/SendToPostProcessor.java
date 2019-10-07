@@ -3,38 +3,41 @@ package com.atex.onecms.app.dam.integration.camel.component.redfact.camel;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 
-import com.atex.onecms.app.dam.camel.processor.InstagramToNoSqlProcessor;
-import com.atex.onecms.app.dam.camel.processor.TweetsToNoSqlProcessor;
+import com.atex.onecms.app.dam.engagement.EngagementAspect;
 import com.atex.onecms.app.dam.engagement.EngagementDesc;
 import com.atex.onecms.app.dam.engagement.EngagementElement;
-import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactArticleBean;
+import com.atex.onecms.app.dam.integration.camel.component.redfact.RedFactUtils;
+import com.atex.onecms.app.dam.integration.camel.component.redfact.RedfactConfig;
+import com.atex.onecms.app.dam.standard.aspects.OneArticleBean;
 import com.atex.onecms.app.dam.util.ContentWriteSerializer;
-import com.atex.onecms.app.dam.util.DamCamelUtils;
 import com.atex.onecms.app.dam.util.DamEngagementUtils;
 import com.atex.onecms.app.dam.workflow.WFStatusBean;
+import com.atex.onecms.app.dam.workflow.WFStatusListBean;
 import com.atex.onecms.app.dam.workflow.WFStatusUtils;
 import com.atex.onecms.app.dam.workflow.WebContentStatusAspectBean;
 import com.atex.onecms.content.*;
 import com.atex.onecms.content.repository.ContentModifiedException;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.polopoly.application.Application;
 import com.polopoly.application.ApplicationInitEvent;
 import com.polopoly.application.ApplicationOnAfterInitEvent;
-import com.polopoly.cm.client.CmClient;
+import com.polopoly.cm.client.CMException;
 import com.polopoly.user.server.Caller;
 import com.polopoly.user.server.UserId;
 import com.polopoly.util.StringUtil;
-import org.apache.camel.CamelContext;
+import javafx.util.Pair;
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
 import org.apache.camel.Processor;
 
-import com.atex.onecms.app.dam.integration.camel.component.redfact.RedfactConfig;
-import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.util.jndi.JndiContext;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -45,8 +48,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 
+import javax.annotation.Nullable;
 import javax.servlet.ServletContext;
 
 /**
@@ -57,84 +60,140 @@ import javax.servlet.ServletContext;
 @ApplicationInitEvent
 public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEvent {
 
+    private static final Subject SYSTEM_SUBJECT = new Subject("98", (String)null);
+
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String REDFACT_APPTYPE = "redfact";
     private static final String REDFACT_ID_PREFIX = "rf-";
 
     private static ContentManager contentManager;
-    private Application application;
-		private Caller latestCaller = null;
+    private static Application application;
+    private Caller latestCaller = null;
 
-		@Override
-		public void onAfterInit(final ServletContext ctx,
-		                        final String name,
-		                        final Application application) {
+    @Override
+    public void onAfterInit(final ServletContext ctx,
+                            final String name,
+                            final Application _application) {
 
-			log.info("Initializing dam camel context");
+        log.info("Initializing SendToPostProcessor");
 
-			try {
-				if (name.equals("integration-server")) this.application = application;
-			} catch (Exception e) {
-				log.error("cannot initialise camel context: " + e.getMessage(), e);
-			} finally {
-				log.info("Dam camel context initialisation complete");
-			}
-		}
+        try {
+            if (application == null) application = _application;
+            if (contentManager == null) {
+                final RepositoryClient repoClient = (RepositoryClient) application.getApplicationComponent(RepositoryClient.DEFAULT_COMPOUND_NAME);
+                if (repoClient == null) {
+                    throw new CMException("No RepositoryClient named '"
+                      + RepositoryClient.DEFAULT_COMPOUND_NAME
+                      + "' present in Application '"
+                      + application.getName() + "'");
+                }
+                contentManager = repoClient.getContentManager();
+            }
+            log.info("Started SendToPostProcessort");
+        } catch (Exception e) {
+            log.error("Cannot start SendToPostProcessor: " + e.getMessage(), e);
+        } finally {
+            log.info("SendToPostProcessor complete");
+        }
+    }
 
-		@Override
+    @Override
     public void process(final Exchange exchange) throws Exception {
 
         log.info("SendToPostProcessor - start work");
 
         try {
-            final Message msg = exchange.getIn();
-            RedFactArticleBean redFactArticleBean = msg.getBody(RedFactArticleBean.class);
-            final Caller caller = msg.getHeader("caller", Caller.class);
-            latestCaller = caller;
-            final ContentId contentId = msg.getHeader("contentId", ContentId.class);
             if (contentManager == null) {
-                contentManager = msg.getHeader("contentManager", ContentManager.class);
+                exchange.getIn().setFault(true);
+                return;
+            }
+            String contentIdString;
+            if (exchange.getIn().getBody() instanceof String) {
+                contentIdString = getContentId(exchange);
+            }
+            else {
+                contentIdString = exchange.getIn().getHeader("contentId", ContentId.class).getKey();
             }
 
-            final DamEngagementUtils utils = new DamEngagementUtils(contentManager);
+            ContentResult<OneArticleBean> cr = null;
+            ContentId contentId = IdUtil.fromString(contentIdString);
+            ContentVersionId contentVersionId = contentManager.resolve(contentId, Subject.NOBODY_CALLER);
+            if (contentVersionId != null) {
+                cr = contentManager.get(contentVersionId, null, OneArticleBean.class, null, Subject.NOBODY_CALLER);
+            }
 
-            CloseableHttpResponse response = sendArticleToRedFact(redFactArticleBean);
+            if (cr == null) {
+                exchange.setProperty(Exchange.ROUTE_STOP, Boolean.TRUE);
+                return;
+            }
 
-//            String newStatus;
-//            if (response.getStatusLine().getStatusCode() == 200) {
-//                newStatus = "online";
-//
-//                String redFactId = "";
-//                final EngagementDesc engagement = createEngagementObject((redFactId != null) ? redFactId : "", caller);
-////            engagement.getAttributes().add(createElement("link", response.getLink()));
-//
-//                if (redFactId != null) {
-//                    utils.updateEngagement(contentId, engagement);
-//                } else {
-//                    utils.addEngagement(contentId, engagement);
-//                }
-//
-//            } else {
-//                newStatus = "errorposttoredfact";
-//            }
-//            final ContentVersionId id = contentManager.resolve(contentId, Subject.NOBODY_CALLER);
-//            final ContentResult<Object> cr = contentManager.get(id, Object.class, Subject.NOBODY_CALLER);
-//            setWebStatus(cr,newStatus);
-            exchange.getOut().setBody(response);
+
+            Pair<String, Integer> httpResult = sendArticleToRedFact(contentIdString, cr);
+            String newStatus;
+            if (httpResult.getValue() == 200) {
+                newStatus = "online";
+            } else {
+                newStatus = "errorpostingtoredfact";
+            }
+
+            if (newStatus.equals("online")) {
+                final DamEngagementUtils utils = new DamEngagementUtils(contentManager);
+                String redFactId = httpResult.getKey();
+                final EngagementDesc engagement = createEngagementObject((redFactId != null) ? redFactId : "", getCurrentCaller());
+                engagement.getAttributes().add(createElement("link", httpResult.getKey()));
+
+                final String existingRedFactId = getRedFactIdFromEngagement(utils, contentId);
+                if (existingRedFactId != null) {
+                    utils.updateEngagement(contentId, engagement);
+                } else {
+                    utils.addEngagement(contentId, engagement);
+                }
+            }
+            setWebStatus(cr,newStatus);
+
+            exchange.getOut().setBody(httpResult.getKey());
         } finally {
             log.info("SendToPostProcessor - end work");
         }
     }
 
+    private String getRedFactIdFromEngagement(final DamEngagementUtils utils, final ContentId contentId) throws CMException {
+        final EngagementAspect engAspect = utils.getEngagement(contentId);
+        if (engAspect != null) {
+            final EngagementDesc engagement = Iterables.getFirst(
+              Iterables.filter(engAspect.getEngagementList(), new Predicate<EngagementDesc>() {
+                  @Override
+                  public boolean apply(@Nullable final EngagementDesc engagementDesc) {
+                      return (engagementDesc != null) && com.polopoly.common.lang.StringUtil.equals(engagementDesc.getAppType(), REDFACT_APPTYPE);
+                  }
+              }), null);
+            if (engagement != null) {
+                final String pk = engagement.getAppPk();
+                if (pk.startsWith(REDFACT_ID_PREFIX)) {
+                    return pk.substring(3);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String getContentId(Exchange exchange) {
+        String contentIdStr = (String) exchange.getIn().getBody();
+        String tidiedContentIdStr = contentIdStr.replace("mutation:", "");
+        int lastColon = tidiedContentIdStr.lastIndexOf(':');
+        String unversionedContentId = tidiedContentIdStr.substring(0, lastColon);
+        return unversionedContentId;
+    }
+
     private String onlineContentViewName = ContentManager.SYSTEM_VIEW_PUBLIC;
 
-    private void setWebStatus(ContentResult<Object> cr, String newStatus) {
+    private void setWebStatus(ContentResult<OneArticleBean> cr, String newStatus) {
 
         WebContentStatusAspectBean status = createWebContentStatus(newStatus);
-        final ContentWrite<Object> cw = new ContentWriteBuilder<>()
+        final ContentWrite<OneArticleBean> cw = new ContentWriteBuilder<OneArticleBean>()
             .origin(cr.getContent().getId())
-            .type(cr.getContent().getContentDataType())
+            .type(OneArticleBean.ASPECT_NAME)
             .aspects(cr.getContent().getAspects())
             .aspect(WebContentStatusAspectBean.ASPECT_NAME, status)
             .mainAspect(cr.getContent().getContentAspect())
@@ -167,35 +226,31 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             .orElse(new Caller(new UserId("98")));
     }
 
-    private CloseableHttpResponse sendArticleToRedFact(final RedFactArticleBean articleBean) throws IOException {
+    private Pair<String, Integer> sendArticleToRedFact(final String contentIdString, final ContentResult<OneArticleBean> cr) throws IOException {
 
         String url = RedfactConfig.getInstance().getApiUrl();
-        CloseableHttpResponse response = sendForm(url, articleBean.getParams());
-        log.info("response: " + response.getEntity().toString());
-        if (response.getStatusLine().getStatusCode() == 412) {
+        List<NameValuePair> nameValuePairs = new RedFactUtils().convert(cr);
+        Pair<String,Integer> httpResult = sendForm(url, nameValuePairs);
+        log.info("response: " + httpResult.getKey());
+        if (httpResult.getValue() == 412) {
             log.info("create failed, sending update");
             // either article failed or needs exists
             // try to update instead
             String updateUrl = url;
             if (!updateUrl.endsWith("/")) updateUrl += "/";
-            for (NameValuePair param : articleBean.getParams()) {
-                if (param.getName().equals("id_atex")) {
-                    updateUrl += param.getValue();
-                    break;
-                }
-            }
+            updateUrl += contentIdString.substring("onecms:".length());
             log.info("sending update url:"+updateUrl);
-            response = sendForm(updateUrl, articleBean.getParams());
-            log.info("update response: " + response.getEntity().toString());
+            httpResult = sendForm(updateUrl, nameValuePairs);
+            log.info("update response: " + httpResult.getKey());
         }
-        log.info("status = "+response.getStatusLine().getStatusCode());
-        if (response.getStatusLine().getStatusCode() == 200) {
+        log.info("status = "+httpResult.getValue());
+        if (httpResult.getValue() == 200) {
             log.info("Article send successful, setting status");
         }
-        return response;
+        return httpResult;
     }
 
-    private CloseableHttpResponse sendForm(final String url, final List<NameValuePair> params) throws IOException {
+    private Pair<String,Integer> sendForm(final String url, final Collection<NameValuePair> params) throws IOException {
         try (final OutputStream stream = new ByteArrayOutputStream()) {
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpPost method = new HttpPost(url);
@@ -203,8 +258,16 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             try (CloseableHttpResponse response = httpclient.execute(method)) {
                 System.out.println(response.getStatusLine());
                 HttpEntity responseEntity = response.getEntity();
+                String left = EntityUtils.toString(responseEntity,"UTF-8");
+                String redFactId = "";
+                try {
+                    JsonObject jsonResult = new JsonParser().parse(left).getAsJsonObject();
+                    redFactId = jsonResult.get("id").getAsString();
+                } catch (Exception e) {};
+                Integer right = response.getStatusLine().getStatusCode();
+                Pair<String,Integer> result = new Pair<String,Integer>(redFactId, right);
                 EntityUtils.consume(responseEntity);
-                return response;
+                return result;
             }
         }
     }
@@ -213,7 +276,7 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
         final EngagementDesc engagement = new EngagementDesc();
         engagement.setAppType(REDFACT_APPTYPE);
         engagement.setAppPk(REDFACT_ID_PREFIX + wpId);
-        engagement.setUserName(caller.getLoginName());
+        engagement.setUserName("sysadmin");
         return engagement;
     }
 
@@ -225,12 +288,33 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
     }
 
     private WebContentStatusAspectBean createWebContentStatus(final String statusId) {
-        final WFStatusUtils statusUtils = new WFStatusUtils(contentManager);
-        final WFStatusBean status = statusUtils.getStatusById(statusId);
+        final WFStatusBean status = getWebStatusById(statusId);
         final WebContentStatusAspectBean bean = new WebContentStatusAspectBean();
-        bean.setStatus(status);
+        if (status != null) {
+            bean.setStatus(status);
+        }
         return bean;
     }
+
+    private WFStatusBean getWebStatusById(String statusId) {
+        ContentVersionId idStatusList = this.contentManager.resolve("atex.WebStatusList", SYSTEM_SUBJECT);
+        ContentResult<WFStatusListBean> statusList = this.contentManager.get(idStatusList, WFStatusListBean.class, SYSTEM_SUBJECT);
+        WFStatusListBean statusListBean = statusList.getContent().getContentData();
+        List<WFStatusBean> statuses = statusListBean.getStatus();
+        Iterator iterator = statuses.iterator();
+
+        WFStatusBean wfStatusBean;
+        do {
+            if (!iterator.hasNext()) {
+                return null;
+            }
+
+            wfStatusBean = (WFStatusBean)iterator.next();
+        } while(!wfStatusBean.getStatusID().equals(statusId));
+
+        return wfStatusBean;
+    }
+
 
 
 }
