@@ -1,14 +1,5 @@
-package com.atex.onecms.app.dam.integration.camel.component.redfact.camel;
+package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
-import com.atex.onecms.app.dam.integration.camel.component.redfact.RedfactApplication;
-import com.atex.onecms.app.dam.integration.camel.component.redfact.RedfactConfig;
-import com.atex.onecms.app.dam.integration.camel.component.redfact.config.RedfactConfigPolicy;
-import com.polopoly.application.Application;
-import com.polopoly.application.IllegalApplicationStateException;
-import com.polopoly.cm.ExternalContentId;
-import com.polopoly.cm.client.CMException;
-import com.polopoly.cm.client.CmClient;
-import com.polopoly.cm.policy.PolicyCMServer;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.processor.interceptor.Tracer;

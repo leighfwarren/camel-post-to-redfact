@@ -1,4 +1,4 @@
-package com.atex.onecms.app.dam.integration.camel.component.redfact.camel;
+package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

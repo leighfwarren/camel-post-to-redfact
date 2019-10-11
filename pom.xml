@@ -73,6 +73,15 @@
     <desk.version>2.10.3-SNAPSHOT</desk.version>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.atex</groupId>
+        <artifactId>module-desk</artifactId>
+        <version>${desk.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
 
     <dependency>
