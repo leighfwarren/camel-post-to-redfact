@@ -6,8 +6,11 @@ import com.atex.onecms.content.callback.CallbackException;
 import com.atex.onecms.content.mapping.ContentComposer;
 import com.atex.onecms.content.mapping.Context;
 import com.atex.onecms.content.mapping.Request;
+import com.atex.onecms.content.metadata.MetadataInfo;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.polopoly.metadata.Dimension;
+import com.polopoly.metadata.Entity;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
@@ -43,7 +46,12 @@ public class RedFactUtils {
     public List<NameValuePair> getNameValuePairs(ContentResult<OneArticleBean> source, OneArticleBean damArticle) {
         List<NameValuePair> params = new ArrayList<>();
         // fixed params
-        params.add(new BasicNameValuePair("catchline_atex", "Ressort 1")); // fixed
+        MetadataInfo metadataInfo = (MetadataInfo)source.getContent().getAspect("atex.Metadata").getData();
+        Dimension ressort1Dimension = metadataInfo.getMetadata().getDimensionById("dimension.ressort1");
+        if (ressort1Dimension != null && ressort1Dimension.getEntities() != null && ressort1Dimension.getEntities().size() > 0) {
+            Entity entity = (Entity)ressort1Dimension.getEntities().get(0);
+            params.add(new BasicNameValuePair("catchline_atex", entity.getName())); // fixed
+        }
         params.add(new BasicNameValuePair("category", "2014")); // fixed
         params.add(new BasicNameValuePair("status", "pu_all#wo_0")); // fixed
         // end fixed
@@ -72,7 +80,6 @@ public class RedFactUtils {
             }
         }
         params.add(new BasicNameValuePair("lastchgdate",getLastModifiedDate(damArticle)));
-        params.add(new BasicNameValuePair("catchline_atex",damArticle.getSection()));
         return params;
     }
 
