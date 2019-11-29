@@ -256,7 +256,7 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             try (CloseableHttpResponse response = httpclient.execute(method)) {
                 System.out.println(response.getStatusLine());
                 HttpEntity responseEntity = response.getEntity();
-                String left = EntityUtils.toString(responseEntity,"UTF-8");
+                String left = EntityUtils.toString(responseEntity, StandardCharsets.UTF_8);
                 String redFactId = "";
                 try {
                     JsonObject jsonResult = new JsonParser().parse(left).getAsJsonObject();
