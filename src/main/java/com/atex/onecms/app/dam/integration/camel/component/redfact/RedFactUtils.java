@@ -72,11 +72,11 @@ public class RedFactUtils {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             if (offtime != null && offtime != 0) {
                 LocalDateTime dt = LocalDateTime.ofEpochSecond(offtime/1000,0,ZoneOffset.UTC);
-                params.add(new BasicNameValuePair("valid_from",formatter.format(dt)));
+                params.add(new BasicNameValuePair("valid_till", Long.toString(dt.toEpochSecond(ZoneOffset.UTC))));
             }
             if (ontime != null && ontime != 0) {
-                LocalDateTime dt = LocalDateTime.ofEpochSecond(offtime/1000,0,ZoneOffset.UTC);
-                params.add(new BasicNameValuePair("valid_till",formatter.format(dt)));
+                LocalDateTime dt = LocalDateTime.ofEpochSecond(ontime/1000,0,ZoneOffset.UTC);
+                params.add(new BasicNameValuePair("valid_from",Long.toString(dt.toEpochSecond(ZoneOffset.UTC))));
             }
         }
         params.add(new BasicNameValuePair("lastchgdate",getLastModifiedDate(damArticle)));
@@ -84,8 +84,7 @@ public class RedFactUtils {
     }
 
     private String getTopStory(OneArticleBean damArticle) {
-        boolean h1 = damArticle.getName().startsWith("H1");
-        return (h1) ? "1" : "0";
+        return damArticle.getPriority() > 0 ? "1" : "0";
     }
 
     private String getLastModifiedDate(OneArticleBean damArticle) {
