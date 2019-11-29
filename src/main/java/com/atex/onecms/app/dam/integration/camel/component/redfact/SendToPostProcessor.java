@@ -3,6 +3,7 @@ package com.atex.onecms.app.dam.integration.camel.component.redfact;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -251,7 +252,7 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
         try (final OutputStream stream = new ByteArrayOutputStream()) {
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpPost method = new HttpPost(url);
-            method.setEntity(new UrlEncodedFormEntity(params));
+            method.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
             try (CloseableHttpResponse response = httpclient.execute(method)) {
                 System.out.println(response.getStatusLine());
                 HttpEntity responseEntity = response.getEntity();
