@@ -17,6 +17,13 @@ public class RedfactConfigPolicy extends ContentPolicy{
     protected static final String ONECMS_IMAGE_PREFIX = "onecmsImagePrefix";
     protected static final String ONECMS_IMAGE_SECRET = "onecmsImageSecret";
     protected static final String ONECMS_IMAGE_FORMAT = "onecmsImageFormat";
+    protected static final String EXTERNAL_IMAGE_STORE_HOST = "externalImageStoreHost";
+    protected static final String EXTERNAL_IMAGE_STORE_USERNAME = "externalImageStoreUsername";
+    protected static final String PRIVATE_SSH_KEY_PATH = "privateSshKeyPath";
+    protected static final String EXTERNAL_IMAGE_STORE_PORT = "externalImageStorePort";
+    protected static final String EXTERNAL_IMAGE_STORE_PATH = "externalImageStorePath";
+    protected static final String EXTERNAL_IMAGE_STORE_URL = "externalImageStoreUrl";
+    protected static final String FRONT_END_URL = "frontEndUrl";
 
     @Override
     protected void initSelf() {
@@ -47,6 +54,34 @@ public class RedfactConfigPolicy extends ContentPolicy{
             return ((SingleValuePolicy) getChildPolicy(ONECMS_IMAGE_FORMAT)).getValue();
     }
 
+    public String getExternalImageStoreHost() throws CMException {
+        return ((SingleValuePolicy) getChildPolicy(EXTERNAL_IMAGE_STORE_HOST)).getValue();
+    }
+
+    public String getExternalImageStoreUsername() throws CMException {
+        return ((SingleValuePolicy) getChildPolicy(EXTERNAL_IMAGE_STORE_USERNAME)).getValue();
+    }
+
+    public String getPrivateSshKeyPath() throws CMException {
+        return ((SingleValuePolicy) getChildPolicy(PRIVATE_SSH_KEY_PATH)).getValue();
+    }
+
+    public String getExternalImageStorePort() throws CMException {
+        return ((SingleValuePolicy) getChildPolicy(EXTERNAL_IMAGE_STORE_PORT)).getValue();
+    }
+
+    public String getExternalImageStorePath() throws CMException {
+        return ((SingleValuePolicy) getChildPolicy(EXTERNAL_IMAGE_STORE_PATH)).getValue();
+    }
+
+    public String getExternalImageStoreUrl() throws CMException {
+        return ((SingleValuePolicy) getChildPolicy(EXTERNAL_IMAGE_STORE_URL)).getValue();
+    }
+
+    public String getFrontEndUrl() throws CMException {
+        return ((SingleValuePolicy) getChildPolicy(FRONT_END_URL)).getValue();
+    }
+
     public RedfactConfig getConfig() throws CMException {
 
         RedfactConfig bean = new RedfactConfig();
@@ -56,6 +91,13 @@ public class RedfactConfigPolicy extends ContentPolicy{
         bean.setImageFormat(getOnecmsImageFormat());
         bean.setImagePrefix(getOnecmsImagePrefix());
         bean.setImageSecret(getOnecmsImageSecret());
+        bean.setExternalImageStoreHost(getExternalImageStoreHost());
+        bean.setExternalImageStoreUsername(getExternalImageStoreUsername());
+        bean.setPrivateSshKeyPath(getPrivateSshKeyPath());
+        bean.setExternalImageStorePort(getExternalImageStorePort());
+        bean.setExternalImageStorePath(getExternalImageStorePath());
+        bean.setExternalImageStoreUrl(getExternalImageStoreUrl());
+        bean.setFrontEndUrl(getFrontEndUrl());
 
         return bean;
     }

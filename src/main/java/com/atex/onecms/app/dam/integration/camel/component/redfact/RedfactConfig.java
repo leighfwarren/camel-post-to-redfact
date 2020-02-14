@@ -12,21 +12,46 @@ public class RedfactConfig {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    private static RedfactConfig instance;
-
     private String apiUrl;
     private String username;
     private String password;
     private String imagePrefix;
     private String imageSecret;
     private String imageFormat;
+    private String externalImageStoreHost;
+    private String externalImageStoreUsername;
+    private String privateSshKeyPath;
+    private String externalImageStorePort;
+    private String externalImageStorePath;
+    private String externalImageStoreUrl;
+    private String frontEndUrl;
 
-    public RedfactConfig() {
+
+    public String getExternalImageStoreHost() {
+        return externalImageStoreHost;
     }
 
-    public static RedfactConfig getInstance() {
-        if (instance == null) instance = RedfactApplication.getRedFactConfig();
-        return instance;
+    public void setExternalImageStoreHost(String externalImageStoreHost) {
+        this.externalImageStoreHost = externalImageStoreHost;
+    }
+
+    public String getExternalImageStoreUsername() {
+        return externalImageStoreUsername;
+    }
+
+    public void setExternalImageStoreUsername(String externalImageStoreUsername) {
+        this.externalImageStoreUsername = externalImageStoreUsername;
+    }
+
+    public String getPrivateSshKeyPath() {
+        return privateSshKeyPath;
+    }
+
+    public void setPrivateSshKeyPath(String privateSshKeyPath) {
+        this.privateSshKeyPath = privateSshKeyPath;
+    }
+
+    public RedfactConfig() {
     }
 
     public String getApiUrl() {
@@ -83,5 +108,37 @@ public class RedfactConfig {
 
     public void setImageFormat(String imageFormat) {
         this.imageFormat = imageFormat;
+    }
+
+    public String getExternalImageStorePort() {
+        return externalImageStorePort;
+    }
+
+    public void setExternalImageStorePort(String externalImageStorePort) {
+        this.externalImageStorePort = externalImageStorePort;
+    }
+
+    public String getExternalImageStoreUrl() {
+        return externalImageStoreUrl;
+    }
+
+    public void setExternalImageStoreUrl(String externalImageStoreUrl) {
+        this.externalImageStoreUrl = externalImageStoreUrl;
+    }
+
+    public String getFrontEndUrl() {
+        return frontEndUrl;
+    }
+
+    public void setFrontEndUrl(String frontEndUrl) {
+        this.frontEndUrl = frontEndUrl;
+    }
+
+    public String getExternalImageStorePath() {
+        return externalImageStorePath;
+    }
+
+    public void setExternalImageStorePath(String externalImageStorePath) {
+        this.externalImageStorePath = externalImageStorePath;
     }
 }

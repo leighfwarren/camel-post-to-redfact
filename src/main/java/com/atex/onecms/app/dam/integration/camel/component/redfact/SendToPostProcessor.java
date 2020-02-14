@@ -3,7 +3,9 @@ package com.atex.onecms.app.dam.integration.camel.component.redfact;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Iterator;
@@ -16,6 +18,7 @@ import com.atex.onecms.app.dam.engagement.EngagementElement;
 import com.atex.onecms.app.dam.standard.aspects.OneArticleBean;
 import com.atex.onecms.app.dam.util.ContentWriteSerializer;
 import com.atex.onecms.app.dam.util.DamEngagementUtils;
+import com.atex.onecms.app.dam.util.DamUtils;
 import com.atex.onecms.app.dam.workflow.WFStatusBean;
 import com.atex.onecms.app.dam.workflow.WFStatusListBean;
 import com.atex.onecms.app.dam.workflow.WebContentStatusAspectBean;
@@ -29,12 +32,14 @@ import com.polopoly.application.Application;
 import com.polopoly.application.ApplicationInitEvent;
 import com.polopoly.application.ApplicationOnAfterInitEvent;
 import com.polopoly.cm.client.CMException;
+import com.polopoly.cm.client.CmClient;
 import com.polopoly.user.server.Caller;
 import com.polopoly.user.server.UserId;
 import com.polopoly.util.StringUtil;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
+import org.apache.commons.httpclient.HttpClientError;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpEntity;
@@ -42,8 +47,10 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,16 +73,29 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
     private static final String REDFACT_APPTYPE = "redfact";
     private static final String REDFACT_ID_PREFIX = "rf-";
 
+    private static CmClient cmClient;
     private static ContentManager contentManager;
     private static Application application;
     private Caller latestCaller = null;
+
+    private static RedFactUtils redFactUtils;
+    private RedfactConfig redFactConfig;
+
+    private static final String IMAGE_SERVICE_URL_FALLBACK = "http://localhost:8080";
+    private static String imageServiceUrl;
+
+
+    private final static String STATUS_ONLINE = "online";
+    private final static String STATUS_ERROR = "errorpostingtoredfact";
+
+    private String onlineContentViewName = ContentManager.SYSTEM_VIEW_PUBLIC;
 
     @Override
     public void onAfterInit(final ServletContext ctx,
                             final String name,
                             final Application _application) {
 
-        log.info("Initializing SendToPostProcessor");
+        log.debug("Initializing SendToPostProcessor");
 
         try {
             if (application == null) application = _application;
@@ -89,21 +109,46 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                 }
                 contentManager = repoClient.getContentManager();
             }
-            log.info("Started SendToPostProcessort");
+            if (cmClient == null) {
+                cmClient = application.getPreferredApplicationComponent(CmClient.class);;
+                if (cmClient == null) {
+                    throw new CMException("No cmClient present in Application '"
+                      + application.getName() + "'");
+                }
+            }
+
+            try {
+                if (com.polopoly.common.lang.StringUtil.isEmpty(DamUtils.getDamUrl())) {
+                    imageServiceUrl = IMAGE_SERVICE_URL_FALLBACK;
+                    log.warn("desk.config.damUrl is not configured in connection.properties");
+                } else {
+                    URL url = new URL(DamUtils.getDamUrl());
+                    imageServiceUrl = url.getProtocol() + "://" + url.getHost() + ":" + url.getPort();
+                }
+            } catch (MalformedURLException e) {
+                log.error("Cannot configure the imageServiceUrl: " + e.getMessage());
+                imageServiceUrl = IMAGE_SERVICE_URL_FALLBACK;
+            }
+
+            if (redFactUtils == null)
+                redFactUtils = new RedFactUtils();
+
+            log.debug("Started SendToPostProcessort");
         } catch (Exception e) {
             log.error("Cannot start SendToPostProcessor: " + e.getMessage(), e);
         } finally {
-            log.info("SendToPostProcessor complete");
+            log.debug("SendToPostProcessor complete");
         }
     }
 
     @Override
     public void process(final Exchange exchange) throws Exception {
 
-        log.info("SendToPostProcessor - start work");
+        redFactConfig = RedfactApplication.getRedFactConfig();
+        log.debug("SendToPostProcessor - start work");
 
         try {
-            if (contentManager == null) {
+            if (cmClient == null || contentManager == null) {
                 exchange.getIn().setFault(true);
                 return;
             }
@@ -127,20 +172,36 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                 return;
             }
 
+            RedFactFormArticle redFactFormArticle = redFactUtils.convert(imageServiceUrl, redFactConfig, cmClient, contentManager, cr);
+            for (RedFactFormImage redFactFormImage : redFactFormArticle.getRedFactFormImages()) {
 
-            Pair<String, Integer> httpResult = sendArticleToRedFact(contentIdString, cr);
+                redFactUtils.sendUrlToSftp(redFactFormImage.getOnecmsImageUrl(), redFactConfig.getPrivateSshKeyPath(), redFactFormImage.getContentIdString(),
+                  redFactConfig.getExternalImageStoreUsername(),
+                  redFactConfig.getExternalImageStoreHost(),
+                  Integer.parseInt(redFactConfig.getExternalImageStorePort()),
+                  redFactConfig.getExternalImageStorePath());
+                Pair<String, Integer> httpImageResult = redFactUtils.sendImageFormToRedFact(redFactConfig.getApiUrl(), redFactFormImage);
+                log.debug("redfact image id ="+httpImageResult.getKey()+" status = "+httpImageResult.getValue());
+                NameValuePair formDirectContentParam = getFormDirectContentParam(httpImageResult.getKey());
+                redFactFormArticle.getFormArticle().add(formDirectContentParam);
+            }
+            Pair<String, Integer> httpArticleResult = redFactUtils.sendArticleFormToRedFact(redFactConfig.getApiUrl(), contentIdString, cr, redFactFormArticle);
+
             String newStatus;
-            if (httpResult.getValue() == 200) {
-                newStatus = "online";
+
+            if (httpArticleResult.getValue() == 200) {
+                newStatus = STATUS_ONLINE;
             } else {
-                newStatus = "errorpostingtoredfact";
+                newStatus = STATUS_ERROR;
             }
 
-            if (newStatus.equals("online")) {
+            if (newStatus.equals(STATUS_ONLINE)) {
                 final DamEngagementUtils utils = new DamEngagementUtils(contentManager);
-                String redFactId = httpResult.getKey();
+                String redFactId = httpArticleResult.getKey();
                 final EngagementDesc engagement = createEngagementObject((redFactId != null) ? redFactId : "", getCurrentCaller());
-                engagement.getAttributes().add(createElement("link", httpResult.getKey()));
+                String url = redFactConfig.getFrontEndUrl() + "/" + RedFactUtils.REDFACT_ARTICLE_SEGMENT + "." + httpArticleResult.getKey();
+                url = redFactUtils.tidyUrl(url);
+                engagement.getAttributes().add(createElement("link", url));
 
                 final String existingRedFactId = getRedFactIdFromEngagement(utils, contentId);
                 if (existingRedFactId != null) {
@@ -151,10 +212,14 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             }
             setWebStatus(cr,newStatus);
 
-            exchange.getOut().setBody(httpResult.getKey());
+            exchange.getOut().setBody(httpArticleResult.getKey());
         } finally {
-            log.info("SendToPostProcessor - end work");
+            log.debug("SendToPostProcessor - end work");
         }
+    }
+
+    private NameValuePair getFormDirectContentParam(String imageId) {
+        return new BasicNameValuePair("direct_content", "img#"+imageId);
     }
 
     private String getRedFactIdFromEngagement(final DamEngagementUtils utils, final ContentId contentId) throws CMException {
@@ -184,8 +249,6 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
         String unversionedContentId = tidiedContentIdStr.substring(0, lastColon);
         return unversionedContentId;
     }
-
-    private String onlineContentViewName = ContentManager.SYSTEM_VIEW_PUBLIC;
 
     private void setWebStatus(ContentResult<OneArticleBean> cr, String newStatus) {
 
@@ -225,52 +288,6 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             .orElse(new Caller(new UserId("98")));
     }
 
-    private Pair<String, Integer> sendArticleToRedFact(final String contentIdString, final ContentResult<OneArticleBean> cr) throws IOException {
-
-        String url = RedfactConfig.getInstance().getApiUrl();
-        List<NameValuePair> nameValuePairs = new RedFactUtils().convert(cr);
-        Pair<String,Integer> httpResult = sendForm(url, nameValuePairs);
-        log.info("response: " + httpResult.getKey());
-        if (httpResult.getValue() == 412) {
-            log.info("create failed, sending update");
-            // either article failed or needs exists
-            // try to update instead
-            String updateUrl = url;
-            if (!updateUrl.endsWith("/")) updateUrl += "/";
-            updateUrl += contentIdString.substring("onecms:".length());
-            log.info("sending update url:"+updateUrl);
-            httpResult = sendForm(updateUrl, nameValuePairs);
-            log.info("update response: " + httpResult.getKey());
-        }
-        log.info("status = "+httpResult.getValue());
-        if (httpResult.getValue() == 200) {
-            log.info("Article send successful, setting status");
-        }
-        return httpResult;
-    }
-
-    private Pair<String,Integer> sendForm(final String url, final Collection<NameValuePair> params) throws IOException {
-        try (final OutputStream stream = new ByteArrayOutputStream()) {
-            CloseableHttpClient httpclient = HttpClients.createDefault();
-            HttpPost method = new HttpPost(url);
-            method.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
-            try (CloseableHttpResponse response = httpclient.execute(method)) {
-                System.out.println(response.getStatusLine());
-                HttpEntity responseEntity = response.getEntity();
-                String left = EntityUtils.toString(responseEntity, StandardCharsets.UTF_8);
-                String redFactId = "";
-                try {
-                    JsonObject jsonResult = new JsonParser().parse(left).getAsJsonObject();
-                    redFactId = jsonResult.get("id").getAsString();
-                } catch (Exception e) {};
-                Integer right = response.getStatusLine().getStatusCode();
-                Pair<String,Integer> result = new ImmutablePair<String,Integer>(redFactId, right);
-                EntityUtils.consume(responseEntity);
-                return result;
-            }
-        }
-    }
-
     private EngagementDesc createEngagementObject(final String wpId, final Caller caller) {
         final EngagementDesc engagement = new EngagementDesc();
         engagement.setAppType(REDFACT_APPTYPE);
@@ -296,8 +313,8 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
     }
 
     private WFStatusBean getWebStatusById(String statusId) {
-        ContentVersionId idStatusList = this.contentManager.resolve("atex.WebStatusList", SYSTEM_SUBJECT);
-        ContentResult<WFStatusListBean> statusList = this.contentManager.get(idStatusList, WFStatusListBean.class, SYSTEM_SUBJECT);
+        ContentVersionId idStatusList = contentManager.resolve("atex.WebStatusList", SYSTEM_SUBJECT);
+        ContentResult<WFStatusListBean> statusList = contentManager.get(idStatusList, WFStatusListBean.class, SYSTEM_SUBJECT);
         WFStatusListBean statusListBean = statusList.getContent().getContentData();
         List<WFStatusBean> statuses = statusListBean.getStatus();
         Iterator iterator = statuses.iterator();
