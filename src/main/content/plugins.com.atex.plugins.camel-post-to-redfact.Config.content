@@ -5,7 +5,14 @@ securityparent:p.siteengine.Configuration.d
 component:polopoly.Content:name:Camel Post To Redfact Configuration
 component:user:value:
 component:password:value:
-component:apiUrl:value:
+component:apiUrl:value:http\://qs.teckbote.de/atex/REST/backend/module
 component:onecmsImagePrefix:value:
-component:onecmsImageSecret:value:
-component:onecmsImageFormat:value:
+component:onecmsImageSecret:value:secret
+component:onecmsImageFormat:value:3\:2
+component:externalImageStoreHost:value:dmdesk.teckbote.de
+component:externalImageStoreUsername:value:atex
+component:privateSshKeyPath:value:~/.ssh/id_rsa
+component:externalImageStorePort:value:22
+component:externalImageStorePath:value:/home/bilder
+component:externalImageStoreUrl:value:https\://dmdesk.teckbote.de/bilder
+component:frontEndUrl:value:http\://qs.teckbote.de

@@ -1,49 +1,126 @@
 package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
 import com.atex.onecms.app.dam.standard.aspects.OneArticleBean;
-import com.atex.onecms.content.ContentResult;
+import com.atex.onecms.app.dam.standard.aspects.OneImageBean;
+import com.atex.onecms.content.*;
+import com.atex.onecms.content.aspects.Aspect;
 import com.atex.onecms.content.callback.CallbackException;
-import com.atex.onecms.content.mapping.ContentComposer;
-import com.atex.onecms.content.mapping.Context;
-import com.atex.onecms.content.mapping.Request;
 import com.atex.onecms.content.metadata.MetadataInfo;
+import com.atex.onecms.image.*;
+import com.atex.onecms.ws.image.ImageServiceConfigurationProvider;
+import com.atex.onecms.ws.image.ImageServiceUrlBuilder;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.jcraft.jsch.*;
+import com.polopoly.cm.client.CMException;
+import com.polopoly.cm.client.CmClient;
 import com.polopoly.metadata.Dimension;
 import com.polopoly.metadata.Entity;
+import org.apache.commons.httpclient.HttpClientError;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-
 
 public class RedFactUtils {
 
     private static Logger log = LoggerFactory.getLogger(RedFactUtils.class);
 
-    public List<NameValuePair> convert(final ContentResult<OneArticleBean> source)
+    public static final String REDFACT_ARTICLE_SEGMENT = "ar";
+    public static final String REDFACT_IMAGE_SEGMENT = "img";
+
+    public RedFactFormArticle convert(String imageServiceUrl, RedfactConfig redFactConfig, CmClient cmClient, ContentManager contentManager, final ContentResult<OneArticleBean> source)
             throws CallbackException {
 
         final OneArticleBean damArticle = source.getContent().getContentData();
 
-        List<NameValuePair> params = getNameValuePairs(source, damArticle);
+        List<NameValuePair> formArticleParams = convertArticleToForm(source, damArticle);
+        List<ContentId> images = damArticle.getImages();
+        List<RedFactFormImage> redFactFormImages = new ArrayList<>();
+        String secret;
+        try {
+            secret = new ImageServiceConfigurationProvider(
+              cmClient.getPolicyCMServer()).getImageServiceConfiguration().getSecret();
+        } catch (CMException e) {
+            throw new RuntimeException("Secret not found", e);
+        }
 
-        return params;
+
+        for (ContentId image : images) {
+            ContentVersionId contentVersionId = contentManager.resolve(image, Subject.NOBODY_CALLER);
+            ContentResult<OneImageBean> imageBean = contentManager.get(contentVersionId, OneImageBean.class, Subject.NOBODY_CALLER);
+            OneImageBean damImage = imageBean.getContent().getContentData();
+
+            // calculate url the redfact uses to get to the sftp store
+            String redfactImageUrl = redFactConfig.getExternalImageStoreUrl() + "/" + contentVersionId.getContentId().getKey();
+            redfactImageUrl = tidyUrl(redfactImageUrl);
+
+            Content<OneImageBean> content = imageBean.getContent();
+            Aspect imageEditAspect = content.getAspect("atex.ImageEditInfo");
+
+            ImageEditInfoAspectBean imageEditInfo = null;
+            if (imageEditAspect != null) {
+                imageEditInfo = (ImageEditInfoAspectBean) imageEditAspect.getData();
+            }
+
+            ImageInfoAspectBean ii = (ImageInfoAspectBean) content.getAspect(ImageInfoAspectBean.ASPECT_NAME).getData();
+
+            RedFactCropCoordinates coordinates = null;
+            String imageFormat = redFactConfig.getImageFormat().replace(':','x');
+            if (imageEditInfo != null) {
+                CropInfo crop = imageEditInfo.getCrop(imageFormat);
+
+                if (crop != null) {
+                    Rectangle rect = crop.getCropRectangle();
+                    coordinates = new RedFactCropCoordinates(rect.getX(),rect.getY(),rect.getX()+rect.getWidth(), rect.getY()+rect.getHeight());
+                }
+            }
+
+            List<NameValuePair> params = convertImageToForm(redfactImageUrl, imageBean, damImage, coordinates);
+
+            // calculate the url to the onecms store for the image
+            ImageServiceUrlBuilder imageBuilder = new ImageServiceUrlBuilder(imageBean, secret);
+            if (StringUtils.isNotEmpty(redFactConfig.getImageFormat())) imageBuilder.aspectRatio(AspectRatio.valueOf(redFactConfig.getImageFormat()));
+            String imageUrl = imageServiceUrl+"/"+imageBuilder.buildUrl();
+            imageUrl = tidyUrl(imageUrl);
+
+            RedFactFormImage redFactFormImage = new RedFactFormImage(contentVersionId.getContentId().getKey(), imageUrl, params);
+            redFactFormImages.add(redFactFormImage);
+        }
+
+        return new RedFactFormArticle(source.getContentId().getContentId().toString(), formArticleParams, redFactFormImages);
     }
 
-    public List<NameValuePair> getNameValuePairs(ContentResult<OneArticleBean> source, OneArticleBean damArticle) {
+    public List<NameValuePair> convertArticleToForm(ContentResult<OneArticleBean> source, OneArticleBean damArticle) {
         List<NameValuePair> params = new ArrayList<>();
         // fixed params
         MetadataInfo metadataInfo = (MetadataInfo)source.getContent().getAspect("atex.Metadata").getData();
@@ -138,5 +215,151 @@ public class RedFactUtils {
         return value;
     }
 
+    public List<NameValuePair> convertImageToForm(String url, ContentResult<OneImageBean> source, OneImageBean damImageBean, RedFactCropCoordinates coordinates) {
+        List<NameValuePair> params = new ArrayList<>();
+        // fixed params
+        params.add(new BasicNameValuePair("category", "4")); // fixed
+        // end fixed
+        params.add(new BasicNameValuePair("name",damImageBean.getName()));
+        params.add(new BasicNameValuePair("url_bild_org",url));
+        if (coordinates != null) {
+            params.add(new BasicNameValuePair("x1", Integer.toString(coordinates.getX1())));
+            params.add(new BasicNameValuePair("x2", Integer.toString(coordinates.getX2())));
+            params.add(new BasicNameValuePair("y1", Integer.toString(coordinates.getY1())));
+            params.add(new BasicNameValuePair("y2", Integer.toString(coordinates.getY2())));
+        }
 
+        return params;
+    }
+
+    public void sendUrlToSftp(String srcUrl, String privateSshKeyPath, String destFilename, String destUsername, String destHost, int destPort, String destPath) {
+
+        JSch ssh = new JSch();
+//        String privateSshKeyPath = "~/.ssh/id_rsa";
+
+        Session session = null;
+        Channel channel = null;
+        try {
+            ssh.addIdentity(privateSshKeyPath);
+            session = ssh.getSession(destUsername,destHost,destPort);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.setConfig("PreferredAuthentications", "publickey");
+            session.setTimeout(15000);
+            session.connect();
+            channel = session.openChannel("sftp");
+            ChannelSftp sftpChannel = (ChannelSftp) channel;
+            sftpChannel.connect();
+            sftpChannel.cd(destPath);
+            String url = tidyUrl(srcUrl);
+            sftpChannel.put(new URL(url).openStream(), destFilename);
+            sftpChannel.quit();
+            session.disconnect();
+        } catch (JSchException e) {
+            log.error("Failed to connect to sftp server",e);
+        } catch (SftpException e) {
+            if (e.id == 4)
+                log.error("Failed to change directory to "+destPath);
+            else
+                log.error("Failed to connect to sftp server",e);
+        } catch (MalformedURLException e) {
+            log.error("Failed to create url to sftp server",e);
+        } catch (IOException e) {
+            log.error("Failed to send file via sftp",e);
+        } finally {
+            if (channel != null) channel.disconnect();
+            if (session != null) session.disconnect();
+        }
+
+    }
+
+    public Pair<String,Integer> sendForm(final String url, final Collection<NameValuePair> params) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug("Send To Redfact URL: "+url);
+            for (NameValuePair param : params) {
+                log.debug("Name: "+param.getName()+" Value: "+param.getValue());
+            }
+        }
+        try (final OutputStream stream = new ByteArrayOutputStream()) {
+            CloseableHttpClient httpclient = HttpClients.createDefault();
+            HttpPost method = new HttpPost(url);
+            method.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+            try (CloseableHttpResponse response = httpclient.execute(method)) {
+                log.debug(response.getStatusLine().toString());
+                HttpEntity responseEntity = response.getEntity();
+                String left = EntityUtils.toString(responseEntity, StandardCharsets.UTF_8);
+                String redFactId = "";
+                try {
+                    JsonObject jsonResult = new JsonParser().parse(left).getAsJsonObject();
+                    redFactId = jsonResult.get("id").getAsString();
+                } catch (Exception e) {};
+                Integer right = response.getStatusLine().getStatusCode();
+                Pair<String,Integer> result = new ImmutablePair<String,Integer>(redFactId, right);
+                EntityUtils.consume(responseEntity);
+                return result;
+            }
+        }
+    }
+
+    public Pair<String, Integer> sendArticleFormToRedFact(String apiUrl, final String contentIdString, final ContentResult<OneArticleBean> cr, final RedFactFormArticle redFactFormArticle) throws IOException, URISyntaxException, HttpClientError {
+
+        try {
+            URIBuilder builder = new URIBuilder(apiUrl);
+            String url = builder.setPath(builder.getPath()+"/"+REDFACT_ARTICLE_SEGMENT).toString();
+            Pair<String,Integer> httpResult = sendForm(url, redFactFormArticle.getFormArticle());
+            log.debug("response: " + httpResult.getKey());
+            if (httpResult.getValue() == 412) {
+                log.debug("create failed, sending update");
+                // either article failed or needs exists
+                // try to update instead
+                String updateUrl = url;
+                if (!updateUrl.endsWith("/")) updateUrl += "/";
+                updateUrl += contentIdString.substring("onecms:".length());
+                log.debug("sending update url:"+updateUrl);
+                httpResult = sendForm(updateUrl, redFactFormArticle.getFormArticle());
+                log.debug("update response: " + httpResult.getKey());
+            }
+            log.debug("status = "+httpResult.getValue());
+            if (httpResult.getValue() == 200) {
+                log.debug("Article send successful, setting status");
+            } else {
+                throw new HttpClientError("Sending article to redfact failed status = "+httpResult.getValue());
+            }
+            return httpResult;
+        } catch (URISyntaxException e) {
+            log.error("Failed to parse redfact uri : "+apiUrl);
+            throw e;
+        } catch (HttpClientError e) {
+            log.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    public Pair<String, Integer> sendImageFormToRedFact(String apiUrl, RedFactFormImage redFactFormImage) throws IOException, URISyntaxException {
+
+        URIBuilder builder = new URIBuilder(apiUrl);
+        String url = builder.setPath(builder.getPath()+"/"+REDFACT_IMAGE_SEGMENT).toString();
+        Pair<String,Integer> httpResult = sendForm(url, redFactFormImage.getFormImage());
+        log.debug("response: " + httpResult.getKey());
+        if (httpResult.getValue() == 412) {
+            log.debug("create failed, sending update");
+            // either article failed or needs exists
+            // try to update instead
+            String updateUrl = url;
+            if (!updateUrl.endsWith("/")) updateUrl += "/";
+            updateUrl += redFactFormImage.getContentIdString().substring("onecms:".length());
+            log.debug("sending update url:"+updateUrl);
+            httpResult = sendForm(updateUrl, redFactFormImage.getFormImage());
+            log.debug("update response: " + httpResult.getKey());
+        }
+        log.debug("status = "+httpResult.getValue());
+        if (httpResult.getValue() == 200) {
+            log.debug("Article send successful, setting status");
+        }
+        return httpResult;
+    }
+
+
+    public String tidyUrl(String url) {
+        return url.replaceAll("(?<!(http:|https:))//","/");
+    }
 }
