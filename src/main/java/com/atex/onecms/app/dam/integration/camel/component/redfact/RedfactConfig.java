@@ -24,8 +24,6 @@ public class RedfactConfig {
     private String externalImageStorePort;
     private String externalImageStorePath;
     private String externalImageStoreUrl;
-    private String frontEndUrl;
-
 
     public String getExternalImageStoreHost() {
         return externalImageStoreHost;
@@ -124,14 +122,6 @@ public class RedfactConfig {
 
     public void setExternalImageStoreUrl(String externalImageStoreUrl) {
         this.externalImageStoreUrl = externalImageStoreUrl;
-    }
-
-    public String getFrontEndUrl() {
-        return frontEndUrl;
-    }
-
-    public void setFrontEndUrl(String frontEndUrl) {
-        this.frontEndUrl = frontEndUrl;
     }
 
     public String getExternalImageStorePath() {

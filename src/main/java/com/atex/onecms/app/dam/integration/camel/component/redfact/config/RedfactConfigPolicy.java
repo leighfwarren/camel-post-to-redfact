@@ -23,7 +23,6 @@ public class RedfactConfigPolicy extends ContentPolicy{
     protected static final String EXTERNAL_IMAGE_STORE_PORT = "externalImageStorePort";
     protected static final String EXTERNAL_IMAGE_STORE_PATH = "externalImageStorePath";
     protected static final String EXTERNAL_IMAGE_STORE_URL = "externalImageStoreUrl";
-    protected static final String FRONT_END_URL = "frontEndUrl";
 
     @Override
     protected void initSelf() {
@@ -78,10 +77,6 @@ public class RedfactConfigPolicy extends ContentPolicy{
         return ((SingleValuePolicy) getChildPolicy(EXTERNAL_IMAGE_STORE_URL)).getValue();
     }
 
-    public String getFrontEndUrl() throws CMException {
-        return ((SingleValuePolicy) getChildPolicy(FRONT_END_URL)).getValue();
-    }
-
     public RedfactConfig getConfig() throws CMException {
 
         RedfactConfig bean = new RedfactConfig();
@@ -97,7 +92,6 @@ public class RedfactConfigPolicy extends ContentPolicy{
         bean.setExternalImageStorePort(getExternalImageStorePort());
         bean.setExternalImageStorePath(getExternalImageStorePath());
         bean.setExternalImageStoreUrl(getExternalImageStoreUrl());
-        bean.setFrontEndUrl(getFrontEndUrl());
 
         return bean;
     }

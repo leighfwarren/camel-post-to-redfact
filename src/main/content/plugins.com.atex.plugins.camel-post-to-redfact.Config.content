@@ -1,5 +1,5 @@
 id:.
-major:appconfig
+major:AppConfig
 inputtemplate:com.atex.plugins.camel-post-to-redfact.Configuration
 securityparent:p.siteengine.Configuration.d
 component:polopoly.Content:name:Camel Post To Redfact Configuration
@@ -15,4 +15,3 @@ component:privateSshKeyPath:value:~/.ssh/id_rsa
 component:externalImageStorePort:value:22
 component:externalImageStorePath:value:/home/bilder
 component:externalImageStoreUrl:value:https\://dmdesk.teckbote.de/bilder
-component:frontEndUrl:value:http\://qs.teckbote.de
