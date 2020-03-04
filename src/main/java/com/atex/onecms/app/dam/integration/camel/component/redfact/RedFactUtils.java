@@ -9,6 +9,7 @@ import com.atex.onecms.content.metadata.MetadataInfo;
 import com.atex.onecms.image.*;
 import com.atex.onecms.ws.image.ImageServiceConfigurationProvider;
 import com.atex.onecms.ws.image.ImageServiceUrlBuilder;
+import com.atex.plugins.structured.text.StructuredText;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.gson.JsonObject;
@@ -126,16 +127,16 @@ public class RedFactUtils {
         MetadataInfo metadataInfo = (MetadataInfo)source.getContent().getAspect("atex.Metadata").getData();
         Dimension ressort1Dimension = metadataInfo.getMetadata().getDimensionById("dimension.ressort1");
         if (ressort1Dimension != null && ressort1Dimension.getEntities() != null && ressort1Dimension.getEntities().size() > 0) {
-            Entity entity = (Entity)ressort1Dimension.getEntities().get(0);
+            Entity entity = ressort1Dimension.getEntities().get(0);
             params.add(new BasicNameValuePair("catchline_atex", entity.getName())); // fixed
         }
         params.add(new BasicNameValuePair("category", "2014")); // fixed
         params.add(new BasicNameValuePair("status", "pu_all#wo_0")); // fixed
         // end fixed
-        params.add(new BasicNameValuePair("name",damArticle.getHeadline().getText()));
+        params.add(new BasicNameValuePair("name",getStructuredText(damArticle.getHeadline())));
 //        params.add(new BasicNameValuePair("subheadline",redFactArticleBean.?????()));
-        params.add(new BasicNameValuePair("editor_teaser",damArticle.getLead().getText()));
-        params.add(new BasicNameValuePair("editor_text",damArticle.getBody().getText()));
+        params.add(new BasicNameValuePair("editor_teaser",getStructuredText(damArticle.getLead())));
+        params.add(new BasicNameValuePair("editor_text",getStructuredText(damArticle.getBody())));
         params.add(new BasicNameValuePair("author",damArticle.getAuthor()));
         params.add(new BasicNameValuePair("id_atex",source.getContentId().getContentId().getKey()));
 //        params.add(new BasicNameValuePair("version_id",source.getContentId().getContentId().getDelegationId())); // number only
@@ -160,11 +161,18 @@ public class RedFactUtils {
         return params;
     }
 
-    private String getTopStory(OneArticleBean damArticle) {
+    public String getStructuredText(StructuredText str) {
+        if (str != null)
+            return str.getText();
+        else
+            return "";
+    }
+
+    public String getTopStory(OneArticleBean damArticle) {
         return damArticle.getPriority() > 0 ? "1" : "0";
     }
 
-    private String getLastModifiedDate(OneArticleBean damArticle) {
+    public String getLastModifiedDate(OneArticleBean damArticle) {
         try {
             Method getLastAmendedTime = damArticle.getClass().getMethod("getLastAmendedTime");
             if (getLastAmendedTime == null) {
@@ -183,7 +191,7 @@ public class RedFactUtils {
         return "";
     }
 
-    private int calculatePriority(String name, int wordCount) {
+    public int calculatePriority(String name, int wordCount) {
         if (name.startsWith("H4")) return 5;
         if (wordCount < 201) return 4;
         if (wordCount < 401) return 3;
@@ -191,7 +199,7 @@ public class RedFactUtils {
         return 1;
     }
 
-    private String truncateWords(final String value, int blankCount, final String suffix) {
+    public String truncateWords(final String value, int blankCount, final String suffix) {
         if (!Strings.isNullOrEmpty(value)) {
             final StringBuilder sb = new StringBuilder();
             int spaceCount = 0;
