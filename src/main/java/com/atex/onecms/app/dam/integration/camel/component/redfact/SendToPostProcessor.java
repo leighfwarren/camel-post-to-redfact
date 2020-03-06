@@ -173,6 +173,7 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             }
 
             RedFactFormArticle redFactFormArticle = redFactUtils.convert(imageServiceUrl, redFactConfig, cmClient, contentManager, cr);
+            NameValuePair formDirectContentParam = null;
             for (RedFactFormImage redFactFormImage : redFactFormArticle.getRedFactFormImages()) {
 
                 redFactUtils.sendUrlToSftp(redFactFormImage.getOnecmsImageUrl(), redFactConfig.getPrivateSshKeyPath(), redFactFormImage.getContentIdString(),
@@ -182,7 +183,10 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                   redFactConfig.getExternalImageStorePath());
                 Pair<String, Integer> httpImageResult = redFactUtils.sendImageFormToRedFact(redFactConfig.getApiUrl(), redFactFormImage);
                 log.debug("redfact image id ="+httpImageResult.getKey()+" status = "+httpImageResult.getValue());
-                NameValuePair formDirectContentParam = getFormDirectContentParam(httpImageResult.getKey());
+                NameValuePair currentFormDirectContentParam = getFormDirectContentParam(httpImageResult.getKey());
+                if (formDirectContentParam != null) formDirectContentParam = new BasicNameValuePair(formDirectContentParam.getName(),formDirectContentParam.getValue()+"--"+currentFormDirectContentParam.getValue());
+            }
+            if (formDirectContentParam != null) {
                 redFactFormArticle.getFormArticle().add(formDirectContentParam);
             }
             Pair<String, Integer> httpArticleResult = redFactUtils.sendArticleFormToRedFact(redFactConfig.getApiUrl(), contentIdString, cr, redFactFormArticle);
