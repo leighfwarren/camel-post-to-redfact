@@ -195,13 +195,13 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                 newStatus = STATUS_ERROR;
             }
 
+            String redFactId = "";
+
             if (newStatus.equals(STATUS_ONLINE)) {
                 final DamEngagementUtils utils = new DamEngagementUtils(contentManager);
-                String redFactId = httpArticleResult.getKey();
+                redFactId = "ar/"+httpArticleResult.getKey();
                 final EngagementDesc engagement = createEngagementObject((redFactId != null) ? redFactId : "", getCurrentCaller());
-                String url = redFactConfig.getFrontEndUrl() + "/" + RedFactUtils.REDFACT_ARTICLE_SEGMENT + "." + httpArticleResult.getKey();
-                url = redFactUtils.tidyUrl(url);
-                engagement.getAttributes().add(createElement("link", url));
+                engagement.getAttributes().add(createElement("link", redFactId));
 
                 final String existingRedFactId = getRedFactIdFromEngagement(utils, contentId);
                 if (existingRedFactId != null) {
@@ -212,7 +212,7 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             }
             setWebStatus(cr,newStatus);
 
-            exchange.getOut().setBody(httpArticleResult.getKey());
+            exchange.getOut().setBody(redFactId);
         } finally {
             log.debug("SendToPostProcessor - end work");
         }

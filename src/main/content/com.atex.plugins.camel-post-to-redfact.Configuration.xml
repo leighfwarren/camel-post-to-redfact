@@ -53,10 +53,6 @@
 			<help>com.atex.plugins.camel-post-to-redfact.externalImageStoreUrl.help</help>
 			<param name="inlineHelp">true</param>
 		</field>
-		<field input-template="p.TextInput" name="frontEndUrl" label="com.atex.plugins.camel-post-to-redfact.frontEndUrl">
-			<help>com.atex.plugins.camel-post-to-redfact.frontEndUrl.help</help>
-			<param name="inlineHelp">true</param>
-		</field>
 
 		<content-xml>
 			<contentref group="plugin" name="plugindef">
