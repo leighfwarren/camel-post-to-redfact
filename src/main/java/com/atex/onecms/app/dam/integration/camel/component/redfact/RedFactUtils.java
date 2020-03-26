@@ -221,6 +221,11 @@ public class RedFactUtils {
         params.add(new BasicNameValuePair("category", "4")); // fixed
         // end fixed
         params.add(new BasicNameValuePair("name",damImageBean.getName()));
+        // Send caption to RedFact, if existent
+        String caption = damImageBean.getCaption();
+        if(caption != null && caption.length() > 0)
+            params.add(new BasicNameValuePair("editor_text", damImageBean.getCaption()));
+
         params.add(new BasicNameValuePair("url_bild_org",url));
         if (coordinates != null) {
             params.add(new BasicNameValuePair("x1", Integer.toString(coordinates.getX1())));
