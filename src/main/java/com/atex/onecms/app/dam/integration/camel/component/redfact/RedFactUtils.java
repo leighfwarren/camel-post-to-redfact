@@ -133,15 +133,23 @@ public class RedFactUtils {
         params.add(new BasicNameValuePair("category", "2014")); // fixed
         params.add(new BasicNameValuePair("status", "pu_all#wo_0")); // fixed
         // end fixed
+
         params.add(new BasicNameValuePair("name",getStructuredText(damArticle.getHeadline())));
-//        params.add(new BasicNameValuePair("subheadline",redFactArticleBean.?????()));
         params.add(new BasicNameValuePair("editor_teaser",getStructuredText(damArticle.getLead())));
         params.add(new BasicNameValuePair("editor_text",getStructuredText(damArticle.getBody())));
         params.add(new BasicNameValuePair("author",damArticle.getAuthor()));
         params.add(new BasicNameValuePair("id_atex",source.getContentId().getContentId().getKey()));
-//        params.add(new BasicNameValuePair("version_id",source.getContentId().getContentId().getDelegationId())); // number only
-        params.add(new BasicNameValuePair("priority",Integer.toString(calculatePriority(damArticle.getName(), damArticle.getWords()))));
-        String topStory = getTopStory(damArticle);
+        int priority = damArticle.getPriority();
+        String topStory = "0";
+        if (priority == 0)
+            priority = calculatePriority(damArticle.getName(), damArticle.getWords());
+        else {
+            if (priority > 10) {
+                priority = priority - 10;
+                topStory = "1";
+            }
+        }
+        params.add(new BasicNameValuePair("priority", Integer.toString(priority)));
         params.add(new BasicNameValuePair("topstory",topStory));
         com.atex.onecms.app.dam.types.TimeState t = damArticle.getTimeState();
         if (t != null) {
@@ -166,10 +174,6 @@ public class RedFactUtils {
             return str.getText();
         else
             return "";
-    }
-
-    public String getTopStory(OneArticleBean damArticle) {
-        return damArticle.getPriority() > 0 ? "1" : "0";
     }
 
     public String getLastModifiedDate(OneArticleBean damArticle) {

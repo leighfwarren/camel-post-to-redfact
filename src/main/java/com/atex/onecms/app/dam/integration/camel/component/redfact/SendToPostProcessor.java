@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import com.atex.onecms.app.dam.DeskConfig;
 import com.atex.onecms.app.dam.engagement.EngagementAspect;
 import com.atex.onecms.app.dam.engagement.EngagementDesc;
 import com.atex.onecms.app.dam.engagement.EngagementElement;
@@ -28,9 +29,8 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.polopoly.application.Application;
-import com.polopoly.application.ApplicationInitEvent;
-import com.polopoly.application.ApplicationOnAfterInitEvent;
+import com.polopoly.application.*;
+import com.polopoly.application.servlet.ApplicationServletUtil;
 import com.polopoly.cm.client.CMException;
 import com.polopoly.cm.client.CmClient;
 import com.polopoly.user.server.Caller;
@@ -81,10 +81,6 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
     private static RedFactUtils redFactUtils;
     private RedfactConfig redFactConfig;
 
-    private static final String IMAGE_SERVICE_URL_FALLBACK = "http://localhost:8080";
-    private static String imageServiceUrl;
-
-
     private final static String STATUS_ONLINE = "online";
     private final static String STATUS_ERROR = "errorpostingtoredfact";
 
@@ -115,19 +111,6 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                     throw new CMException("No cmClient present in Application '"
                       + application.getName() + "'");
                 }
-            }
-
-            try {
-                if (com.polopoly.common.lang.StringUtil.isEmpty(DamUtils.getDamUrl())) {
-                    imageServiceUrl = IMAGE_SERVICE_URL_FALLBACK;
-                    log.warn("desk.config.damUrl is not configured in connection.properties");
-                } else {
-                    URL url = new URL(DamUtils.getDamUrl());
-                    imageServiceUrl = url.getProtocol() + "://" + url.getHost() + ":" + url.getPort();
-                }
-            } catch (MalformedURLException e) {
-                log.error("Cannot configure the imageServiceUrl: " + e.getMessage());
-                imageServiceUrl = IMAGE_SERVICE_URL_FALLBACK;
             }
 
             if (redFactUtils == null)
@@ -172,7 +155,7 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                 return;
             }
 
-            RedFactFormArticle redFactFormArticle = redFactUtils.convert(imageServiceUrl, redFactConfig, cmClient, contentManager, cr);
+            RedFactFormArticle redFactFormArticle = redFactUtils.convert(Utils.getImageServiceUrl(), redFactConfig, cmClient, contentManager, cr);
             NameValuePair formDirectContentParam = null;
             for (RedFactFormImage redFactFormImage : redFactFormArticle.getRedFactFormImages()) {
 
@@ -203,15 +186,15 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
 
             if (newStatus.equals(STATUS_ONLINE)) {
                 final DamEngagementUtils utils = new DamEngagementUtils(contentManager);
-                redFactId = "ar/"+httpArticleResult.getKey();
+                redFactId = "ar."+httpArticleResult.getKey();
                 final EngagementDesc engagement = createEngagementObject((redFactId != null) ? redFactId : "", getCurrentCaller());
                 engagement.getAttributes().add(createElement("link", redFactId));
 
                 final String existingRedFactId = getRedFactIdFromEngagement(utils, contentId);
                 if (existingRedFactId != null) {
-                    utils.updateEngagement(contentId, engagement);
+                    utils.updateEngagement(contentId, engagement, Subject.NOBODY_CALLER);
                 } else {
-                    utils.addEngagement(contentId, engagement);
+                    utils.addEngagement(contentId, engagement, Subject.NOBODY_CALLER);
                 }
             }
             setWebStatus(cr,newStatus);
