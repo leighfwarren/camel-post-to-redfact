@@ -167,7 +167,10 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                 Pair<String, Integer> httpImageResult = redFactUtils.sendImageFormToRedFact(redFactConfig.getApiUrl(), redFactFormImage);
                 log.debug("redfact image id ="+httpImageResult.getKey()+" status = "+httpImageResult.getValue());
                 NameValuePair currentFormDirectContentParam = getFormDirectContentParam(httpImageResult.getKey());
-                if (formDirectContentParam != null) formDirectContentParam = new BasicNameValuePair(formDirectContentParam.getName(),formDirectContentParam.getValue()+"--"+currentFormDirectContentParam.getValue());
+                if (formDirectContentParam != null)
+                    formDirectContentParam = new BasicNameValuePair(formDirectContentParam.getName(),formDirectContentParam.getValue()+"--"+currentFormDirectContentParam.getValue());
+                else
+                    formDirectContentParam = currentFormDirectContentParam;
             }
             if (formDirectContentParam != null) {
                 redFactFormArticle.getFormArticle().add(formDirectContentParam);
