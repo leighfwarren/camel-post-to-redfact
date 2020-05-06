@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.servlet.ServletContext;
+import javax.ws.rs.core.Response;
 
 /**
  * Simple processor that send content to Red Fact.
@@ -127,10 +128,12 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
     @Override
     public void process(final Exchange exchange) throws Exception {
 
-        redFactConfig = RedfactApplication.getRedFactConfig();
-        log.debug("SendToPostProcessor - start work");
-
+        Response response = null;
+        String redFactId = "";
         try {
+            redFactConfig = RedfactApplication.getRedFactConfig();
+            log.debug("SendToPostProcessor - start work");
+
             if (cmClient == null || contentManager == null) {
                 exchange.getIn().setFault(true);
                 return;
@@ -167,30 +170,35 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                 Pair<String, Integer> httpImageResult = redFactUtils.sendImageFormToRedFact(redFactConfig.getApiUrl(), redFactFormImage);
                 log.debug("redfact image id ="+httpImageResult.getKey()+" status = "+httpImageResult.getValue());
                 NameValuePair currentFormDirectContentParam = getFormDirectContentParam(httpImageResult.getKey());
-                if (formDirectContentParam != null)
-                    formDirectContentParam = new BasicNameValuePair(formDirectContentParam.getName(),formDirectContentParam.getValue()+"--"+currentFormDirectContentParam.getValue());
-                else
+                if (formDirectContentParam != null) {
+                    formDirectContentParam = new BasicNameValuePair(formDirectContentParam.getName(), formDirectContentParam.getValue() + "--" + currentFormDirectContentParam.getValue());
+                } else {
                     formDirectContentParam = currentFormDirectContentParam;
+                }
             }
             if (formDirectContentParam != null) {
                 redFactFormArticle.getFormArticle().add(formDirectContentParam);
             }
-            Pair<String, Integer> httpArticleResult = redFactUtils.sendArticleFormToRedFact(redFactConfig.getApiUrl(), contentIdString, cr, redFactFormArticle);
 
-            String newStatus;
-
-            if (httpArticleResult.getValue() == 200) {
-                newStatus = STATUS_ONLINE;
-            } else {
-                newStatus = STATUS_ERROR;
+            String newStatus = STATUS_ERROR;
+            try {
+                Pair<String, Integer> httpArticleResult = redFactUtils.sendArticleFormToRedFact(redFactConfig.getApiUrl(), contentIdString, cr, redFactFormArticle);
+                Integer httpStatus = httpArticleResult.getValue();
+                if (httpStatus == 200) {
+                    newStatus = STATUS_ONLINE;
+                    redFactId = "ar."+httpArticleResult.getKey();
+                    response = Response.ok().build();
+                } else {
+                    response = Response.status(httpStatus).build();
+                }
+            } catch (IOException | URISyntaxException | HttpClientError e) {
+                // error
+                response = Response.serverError().build();
             }
-
-            String redFactId = "";
 
             if (newStatus.equals(STATUS_ONLINE)) {
                 final DamEngagementUtils utils = new DamEngagementUtils(contentManager);
-                redFactId = "ar."+httpArticleResult.getKey();
-                final EngagementDesc engagement = createEngagementObject((redFactId != null) ? redFactId : "", getCurrentCaller());
+                final EngagementDesc engagement = createEngagementObject(redFactId, getCurrentCaller());
                 engagement.getAttributes().add(createElement("link", redFactId));
 
                 final String existingRedFactId = getRedFactIdFromEngagement(utils, contentId);
@@ -202,10 +210,17 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             }
             setWebStatus(cr,newStatus);
 
+        }
+        finally {
+            if (response == null) {
+                response = Response.serverError().build();
+            }
             exchange.getOut().setBody(redFactId);
-        } finally {
+            exchange.getOut().setHeader("response",response);
             log.debug("SendToPostProcessor - end work");
         }
+
+
     }
 
     private NameValuePair getFormDirectContentParam(String imageId) {
