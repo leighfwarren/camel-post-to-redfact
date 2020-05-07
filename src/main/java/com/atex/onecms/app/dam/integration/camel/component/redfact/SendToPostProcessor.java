@@ -1,25 +1,11 @@
 package com.atex.onecms.app.dam.integration.camel.component.redfact;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-
-import com.atex.onecms.app.dam.DeskConfig;
 import com.atex.onecms.app.dam.engagement.EngagementAspect;
 import com.atex.onecms.app.dam.engagement.EngagementDesc;
 import com.atex.onecms.app.dam.engagement.EngagementElement;
 import com.atex.onecms.app.dam.standard.aspects.OneArticleBean;
 import com.atex.onecms.app.dam.util.ContentWriteSerializer;
 import com.atex.onecms.app.dam.util.DamEngagementUtils;
-import com.atex.onecms.app.dam.util.DamUtils;
 import com.atex.onecms.app.dam.workflow.WFStatusBean;
 import com.atex.onecms.app.dam.workflow.WFStatusListBean;
 import com.atex.onecms.app.dam.workflow.WebContentStatusAspectBean;
@@ -27,10 +13,9 @@ import com.atex.onecms.content.*;
 import com.atex.onecms.content.repository.ContentModifiedException;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.polopoly.application.*;
-import com.polopoly.application.servlet.ApplicationServletUtil;
+import com.polopoly.application.Application;
+import com.polopoly.application.ApplicationInitEvent;
+import com.polopoly.application.ApplicationOnAfterInitEvent;
 import com.polopoly.cm.client.CMException;
 import com.polopoly.cm.client.CmClient;
 import com.polopoly.user.server.Caller;
@@ -38,26 +23,21 @@ import com.polopoly.user.server.UserId;
 import com.polopoly.util.StringUtil;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-
 import org.apache.commons.httpclient.HttpClientError;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Simple processor that send content to Red Fact.
@@ -72,7 +52,6 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String REDFACT_APPTYPE = "redfact";
-    private static final String REDFACT_ID_PREFIX = "rf-";
 
     private static CmClient cmClient;
     private static ContentManager contentManager;
@@ -238,10 +217,7 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
                   }
               }), null);
             if (engagement != null) {
-                final String pk = engagement.getAppPk();
-                if (pk.startsWith(REDFACT_ID_PREFIX)) {
-                    return pk.substring(3);
-                }
+                return engagement.getAppPk();
             }
         }
         return null;
@@ -293,10 +269,10 @@ public class SendToPostProcessor implements Processor, ApplicationOnAfterInitEve
             .orElse(new Caller(new UserId("98")));
     }
 
-    private EngagementDesc createEngagementObject(final String wpId, final Caller caller) {
+    private EngagementDesc createEngagementObject(final String id, final Caller caller) {
         final EngagementDesc engagement = new EngagementDesc();
         engagement.setAppType(REDFACT_APPTYPE);
-        engagement.setAppPk(REDFACT_ID_PREFIX + wpId);
+        engagement.setAppPk(id);
         engagement.setUserName("sysadmin");
         return engagement;
     }
