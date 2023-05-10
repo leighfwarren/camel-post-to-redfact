@@ -23,6 +23,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Composer used to create a {@link RedFactArticleBean} from a {@link CustomArticleBean}.
@@ -35,7 +36,6 @@ import java.util.List;
         variantId = "com.atex.onecms.app.dam.integration.camel.component.redfact.article.variantconfig")
 public class DamArticleToRedFactArticleComposer implements ContentComposer<CustomArticleBean, RedFactArticleBean, Object> {
 
-    @Override
     public ContentResult<RedFactArticleBean> compose(final ContentResult<CustomArticleBean> source,
                                                      final String variant,
                                                      final Request request,
@@ -58,6 +58,19 @@ public class DamArticleToRedFactArticleComposer implements ContentComposer<Custo
         articleBean.setTeaser(damArticle.getLead().getText());
         articleBean.setPictures(new ArrayList<>());
         articleBean.setAutor(damArticle.getAuthor());
+        articleBean.setPriority(damArticle.getPriority());
+        Map<String, Map<String, String>> propertyBag = damArticle.getPropertyBag();
+        if (propertyBag != null) {
+            Map<String, String> custom = propertyBag.get("custom");
+            if (custom != null) {
+                if (custom.containsKey("topStory")) {
+                    articleBean.setTopStory(Integer.parseInt(custom.get("topStory")));
+                }
+                if (custom.containsKey("modPubDate")) {
+                    articleBean.setModPubDate(custom.get("modPubDate"));
+                }
+            }
+        }
 
         // try to get the associated images.
         final List<ContentId> images = damArticle.getImages();

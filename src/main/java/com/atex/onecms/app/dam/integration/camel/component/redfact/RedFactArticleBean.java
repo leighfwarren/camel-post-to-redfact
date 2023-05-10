@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.atex.onecms.app.dam.integration.camel.component.redfact.json.*;
 import com.atex.onecms.content.ContentId;
-import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -43,6 +42,15 @@ public class RedFactArticleBean {
 
     @SerializedName("Autor")
     private String autor;
+
+    @SerializedName("Mod_PubDate")
+    private String modPubDate;
+
+    @SerializedName("TopStory")
+    private int topStory;
+
+    @SerializedName("Priority")
+    private int priority;
 
     public RFMetaData getMetadata() {
         return metadata;
@@ -122,5 +130,29 @@ public class RedFactArticleBean {
 
     public String getAutor() {
         return autor;
+    }
+
+    public String getModPubDate() {
+        return modPubDate;
+    }
+
+    public void setModPubDate(String modPubDate) {
+        this.modPubDate = modPubDate;
+    }
+
+    public int getTopStory() {
+        return topStory;
+    }
+
+    public void setTopStory(int topStory) {
+        this.topStory = topStory;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }

@@ -28,7 +28,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
         variantId = "com.atex.onecms.app.dam.integration.camel.component.redfact.image.variantconfig")
 public class DamImageToRedFactImageComposer implements ContentComposer<OneImageBean, RedFactImageBean, Object> {
 
-    @Override
     public ContentResult<RedFactImageBean> compose(final ContentResult<OneImageBean> source,
                                                    final String variant,
                                                    final Request request,
